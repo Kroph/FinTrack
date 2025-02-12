@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinTrack</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <header>
+        <div class="top">
+            <div>
+                <h2 class="user"> Hello, {user}</h2>
+            </div>
+            <div>
+                <h1>FinTrack</h1>
+            </div>
+            <button onclick="logout()">Logout</button>
+        </div>
+    </header>
+
+    <div class="middle">
+        <div class="left-panel">
+            <h2 id="form-title">Enter Expense</h2>
+            <form id="expense-form">
+                <label for="amount">Amount:</label><br>
+                <input type="number" id="amount" step="0.01" required><br><br>
+
+                <label for="description">Description:</label><br>
+                <input type="text" id="description" required><br><br>
+
+                <label for="date">Date:</label><br>
+                <input type="date" id="date"><br><br>
+
+                <button type="submit">Add</button>
+            </form>
+
+            <h3>List</h3>
+            <div class="expense-list" id="expense-list">
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <h2>Visualizations</h2>
+            <div class="chart">
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="bottom" id="footer">
+        </div>
+    </footer>   
+
+    <script src="js/expenses.js"></script>
+</body>
+</html>
