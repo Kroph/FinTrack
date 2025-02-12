@@ -7,6 +7,9 @@
     "dev": "nodemon server.js",
     "postinstall": "npm run build"
   },
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "dependencies": {
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
@@ -20,8 +23,5 @@
   },
   "devDependencies": {
     "nodemon": "^2.0.22"
-  },
-  "engines": {
-    "node": ">=14.0.0"
   }
 }
