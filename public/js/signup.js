@@ -11,10 +11,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch('/api/auth/signup', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify({ username, email, password })
                 });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Error signing up');
+                }
 
                 const data = await response.json();
                 if (data.success) {
@@ -24,7 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert(data.error || 'Error creating account');
                 }
             } catch (err) {
-                alert('Error signing up');
+                console.error('Signup error:', err);
+                alert(err.message || 'Error signing up');
             }
         });
     }

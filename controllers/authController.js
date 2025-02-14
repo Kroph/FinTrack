@@ -19,6 +19,7 @@ const authController = {
 
         try {
             if (!username || !email || !password) {
+                console.log('Missing required fields:', { username, email, password });
                 return res.status(400).json({ error: 'All fields are required' });
             }
 
@@ -60,7 +61,7 @@ const authController = {
                 message: 'Please check your email to verify your account' 
             });
         } catch (err) {
-            console.error(err);
+            console.error('Signup error:', err);
             res.status(500).json({ error: 'Error creating account' });
         }
     },
