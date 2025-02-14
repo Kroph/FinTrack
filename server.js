@@ -1,7 +1,5 @@
 const express = require('express');
 const session = require('express-session');
-const pgSession = require('connect-pg-simple')(session);
-const { pool } = require('./config/database');
 const cors = require('cors');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
@@ -86,7 +84,10 @@ app.use((err, req, res, next) => {
 // Initialize database and start server
 async function startServer() {
     try {
+        console.log('Attempting to initialize database');
         await initDB();
+        console.log('Database initialized successfully');
+
         app.listen(port, () => {
             console.log(`Server running on port ${port}`);
         });
