@@ -8,12 +8,13 @@ if (!process.env.DATABASE_URL) {
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
+    ssl: process.env.NODE_ENV === 'production' ? { 
+        rejectUnauthorized: false 
+    } : false
 });
 
 async function initDB() {
+    console.log('Attempting to connect to the database...');
     const client = await pool.connect();
     try {
         await client.query(`
@@ -29,7 +30,7 @@ async function initDB() {
 
             CREATE TABLE IF NOT EXISTS income (
                 id SERIAL PRIMARY KEY,
-                user_id INTEGER REFERENCES users(id),
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
                 amount NUMERIC(10, 2) NOT NULL,
                 description TEXT,
                 date DATE NOT NULL DEFAULT CURRENT_DATE,
@@ -38,7 +39,7 @@ async function initDB() {
 
             CREATE TABLE IF NOT EXISTS expenses (
                 id SERIAL PRIMARY KEY,
-                user_id INTEGER REFERENCES users(id),
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
                 amount NUMERIC(10, 2) NOT NULL,
                 description TEXT,
                 date DATE NOT NULL DEFAULT CURRENT_DATE,
@@ -47,13 +48,18 @@ async function initDB() {
 
             CREATE TABLE IF NOT EXISTS user_tokens (
                 id SERIAL PRIMARY KEY,
-                user_id INTEGER REFERENCES users(id),
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
                 token VARCHAR(500) NOT NULL,
                 device_id VARCHAR(100) NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(user_id, device_id)
             );
         `);
+
+        console.log('Database initialized successfully.');
+    } catch (error) {
+        console.error('Database initialization failed:', error);
+        throw error;
     } finally {
         client.release();
     }
