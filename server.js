@@ -1,11 +1,12 @@
 const express = require('express');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 const cors = require('cors');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
-const { initDB } = require('./config/database');
+const { pool, initDB } = require('./config/database');
 const authRoutes = require('./routes/auth');
 const incomeRoutes = require('./routes/income');
 const expensesRoutes = require('./routes/expenses');
@@ -48,7 +49,7 @@ app.use(session({
         pool: pool,
         tableName: 'user_sessions'
     }),
-    secret: process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET || 'fallback_secret',
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -81,7 +82,6 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Initialize database and start server
 async function startServer() {
     try {
         console.log('Attempting to initialize database');
