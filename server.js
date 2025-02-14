@@ -78,9 +78,29 @@ app.use('/api/expenses', expensesRoutes);
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).json({ 
-        success: false, 
-        error: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message 
+    
+    // Database connection errors
+    if (err.code === 'ECONNREFUSED' || err.code === '57P01') {
+        return res.status(503).json({
+            success: false,
+            error: 'Database connection failed'
+        });
+    }
+    
+    // Session errors
+    if (err.name === 'SessionError') {
+        return res.status(401).json({
+            success: false,
+            error: 'Session expired'
+        });
+    }
+    
+    // Generic error response
+    res.status(500).json({
+        success: false,
+        error: process.env.NODE_ENV === 'production' 
+            ? 'Internal Server Error' 
+            : err.message
     });
 });
 
