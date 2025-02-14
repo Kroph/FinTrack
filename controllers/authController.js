@@ -42,7 +42,7 @@ const authController = {
                 [username, email, hashedPassword, verificationToken]
             );
 
-            const verificationLink = `http://localhost:8080/api/auth/verify/${verificationToken}`;
+            const verificationLink = `https://fintrack.onrender.com/login.html?verified=${verificationToken}`;
             const mailOptions = {
                 from: 'FinTrack',
                 to: email,
