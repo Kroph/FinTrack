@@ -1,7 +1,9 @@
+// server.js
 const express = require('express');
 const session = require('express-session');
 const cors = require('cors');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const { initDB } = require('./config/database');
@@ -10,11 +12,28 @@ const incomeRoutes = require('./routes/income');
 const expensesRoutes = require('./routes/expenses');
 
 const app = express();
-const port = process.env.PORT || 8080;
+const port = process.env.PORT || 10000;
 
-// CORS configuration for deployment
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100 // limit each IP to 100 requests per windowMs
+});
+
+// Production security headers
+if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('X-Frame-Options', 'DENY');
+        res.setHeader('X-XSS-Protection', '1; mode=block');
+        res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        next();
+    });
+}
+
+// CORS configuration
 const corsOptions = {
-    origin: process.env.FRONTEND_URL || 'https://fintrack-app.onrender.com',
+    origin: process.env.FRONTEND_URL || '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
     optionsSuccessStatus: 200
@@ -22,19 +41,24 @@ const corsOptions = {
 
 // Middleware
 app.use(cors(corsOptions));
+app.use(limiter);
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: true, // Enable in production
-        sameSite: 'none', // Required for cross-origin cookies
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    },
-    proxy: true // Required when running behind a proxy
+    }
 }));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'OK' });
+});
 
 // Routes
 app.get('/', (req, res) => {
@@ -50,12 +74,21 @@ app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({ 
         success: false, 
-        error: 'Internal Server Error' 
+        error: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message 
     });
 });
 
-initDB().catch(console.error);
+// Initialize database and start server
+async function startServer() {
+    try {
+        await initDB();
+        app.listen(port, () => {
+            console.log(`Server running on port ${port}`);
+        });
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1);
+    }
+}
 
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-});
+startServer();
