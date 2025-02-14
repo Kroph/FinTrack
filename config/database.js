@@ -8,16 +8,53 @@ if (!process.env.DATABASE_URL) {
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { 
-        rejectUnauthorized: false 
-    } : false
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
+
+// Test database connection
+pool.connect((err, client, release) => {
+    if (err) {
+        console.error('Error connecting to the database:', err.stack);
+    } else {
+        console.log('Successfully connected to database');
+        release();
+    }
+});
+
+const MAX_RETRIES = 5;
+const RETRY_DELAY = 5000; // 5 seconds
+
+async function connectWithRetry(retries = MAX_RETRIES) {
+    try {
+        const client = await pool.connect();
+        console.log('Successfully connected to database');
+        client.release();
+        return true;
+    } catch (err) {
+        console.error(`Failed to connect to database. Retries left: ${retries}`);
+        if (retries > 0) {
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+            return connectWithRetry(retries - 1);
+        }
+        throw new Error('Failed to connect to database after multiple retries');
+    }
+}
 
 async function initDB() {
     console.log('Attempting to connect to the database...');
+    await connectWithRetry();
     const client = await pool.connect();
     try {
         await client.query(`
+            CREATE TABLE IF NOT EXISTS "session" (
+                "sid" varchar NOT NULL COLLATE "default",
+                "sess" json NOT NULL,
+                "expire" timestamp(6) NOT NULL,
+                CONSTRAINT "session_pkey" PRIMARY KEY ("sid")
+            );
+
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
                 username VARCHAR(50) UNIQUE NOT NULL,
@@ -65,4 +102,17 @@ async function initDB() {
     }
 }
 
-module.exports = { pool, initDB };
+async function testDatabaseConnection() {
+    try {
+        const client = await pool.connect();
+        const result = await client.query('SELECT NOW()');
+        console.log('Database test query result:', result.rows[0]);
+        client.release();
+        return true;
+    } catch (err) {
+        console.error('Database test failed:', err);
+        return false;
+    }
+}
+
+module.exports = { pool, initDB, testDatabaseConnection };
