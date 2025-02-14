@@ -2,11 +2,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const messageDiv = document.getElementById('verification-message');
 
-    if (urlParams.get('verified') === 'true' && messageDiv) {
-        messageDiv.style.display = 'block';
-        setTimeout(() => {
-            messageDiv.style.display = 'none';
-        }, 5000);
+    if (messageDiv) {
+        if (urlParams.get('verified') === 'true') {
+            messageDiv.textContent = 'Email verified successfully! Please login.';
+            messageDiv.style.display = 'block';
+            messageDiv.style.backgroundColor = '#4CAF50';
+            messageDiv.style.color = 'white';
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        } else if (urlParams.get('already_verified') === 'true') {
+            messageDiv.textContent = 'Your account is already verified. Please login.';
+            messageDiv.style.display = 'block';
+            messageDiv.style.backgroundColor = '#2196F3';
+            messageDiv.style.color = 'white';
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
     }
 
     const loginForm = document.getElementById('login-form');

@@ -72,15 +72,42 @@ const authController = {
                 'UPDATE users SET is_verified = TRUE, verification_token = NULL WHERE verification_token = $1 RETURNING id',
                 [req.params.token]
             );
-
+    
             if (result.rows.length > 0) {
-                res.redirect('/login.html?verified=true');
+                return res.redirect(`${process.env.FRONTEND_URL}/login.html?verified=true`);
             } else {
-                res.status(400).send('Invalid or expired verification token');
+                const existingUser = await pool.query(
+                    'SELECT id, is_verified FROM users WHERE verification_token = $1',
+                    [req.params.token]
+                );
+    
+                if (existingUser.rows.length > 0) {
+                    if (existingUser.rows[0].is_verified) {
+                        return res.redirect(`${process.env.FRONTEND_URL}/login.html?already_verified=true`);
+                    }
+                }
+    
+                return res.status(400).send(`
+                    <html>
+                        <body>
+                            <h1>Invalid or Expired Verification Link</h1>
+                            <p>The verification link may have already been used or has expired.</p>
+                            <a href="${process.env.FRONTEND_URL}/login.html">Go to Login</a>
+                        </body>
+                    </html>
+                `);
             }
         } catch (err) {
             console.error(err);
-            res.status(500).send('Error verifying account');
+            res.status(500).send(`
+                <html>
+                    <body>
+                        <h1>Error Verifying Account</h1>
+                        <p>An error occurred while verifying your account. Please try again later.</p>
+                        <a href="${process.env.FRONTEND_URL}/login.html">Go to Login</a>
+                    </body>
+                </html>
+            `);
         }
     },
 
