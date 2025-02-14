@@ -1,6 +1,7 @@
-// server.js
 const express = require('express');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
+const { pool } = require('./config/database');
 const cors = require('cors');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
@@ -45,6 +46,10 @@ app.use(limiter);
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
+    store: new pgSession({
+        pool: pool,
+        tableName: 'user_sessions'
+    }),
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
