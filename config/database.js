@@ -12,7 +12,6 @@ const pool = new Pool({
         rejectUnauthorized: false
     }
 });
-    
 
 async function initDB() {
     const client = await pool.connect();
