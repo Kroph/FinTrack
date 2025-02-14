@@ -5,9 +5,9 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false // Required for Render's PostgreSQL
-    }
+    ssl: isProduction ? {
+        rejectUnauthorized: false
+    } : false
 });
 
 async function initDB() {
@@ -41,6 +41,14 @@ async function initDB() {
                 date DATE NOT NULL DEFAULT CURRENT_DATE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+
+            CREATE TABLE IF NOT EXISTS user_sessions (
+                sid VARCHAR NOT NULL COLLATE "default",
+                sess JSON NOT NULL,
+                expire INTEGER NOT NULL
+            ) WITH (OIDS=FALSE);
+
+            CREATE UNIQUE INDEX "SessionsPkey" ON user_sessions(sid);
 
             CREATE TABLE IF NOT EXISTS user_tokens (
                 id SERIAL PRIMARY KEY,
