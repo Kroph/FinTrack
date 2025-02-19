@@ -1,17 +1,19 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-const isProduction = process.env.NODE_ENV === 'production';
+if (!process.env.DATABASE_URL) {
+    console.error('DATABASE_URL is not set');
+    process.exit(1);
+}
 
-const connectionConfig = {
+const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: isProduction ? {
-        rejectUnauthorized: false
-    } : false
-};
+    ssl: {
+        rejectUnauthorized: process.env.NODE_ENV === 'production'
+    }
+});
 
-const pool = new Pool(connectionConfig);
-
+// Test database connection
 pool.connect((err, client, release) => {
     if (err) {
         console.error('Error connecting to the database:', err.stack);
