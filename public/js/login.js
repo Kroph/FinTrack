@@ -39,11 +39,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 const data = await response.json();
+                
                 if (data.success) {
                     localStorage.setItem('token', data.token);
                     window.location.href = '/home.html';
                 } else {
-                    alert(data.error || 'Invalid credentials');
+                    if (messageDiv && data.message) {
+                        messageDiv.textContent = data.message;
+                        messageDiv.style.display = 'block';
+                        messageDiv.style.backgroundColor = '#2196F3';
+                        messageDiv.style.color = 'white';
+                        setTimeout(() => {
+                            messageDiv.style.display = 'none';
+                        }, 5000);
+                    } else {
+                        alert(data.error || 'Invalid credentials');
+                    }
                 }
             } catch (err) {
                 alert('Error logging in');

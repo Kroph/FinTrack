@@ -12,6 +12,28 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+async function sendVerificationEmail(email, verificationToken) {
+    const verificationLink = `${process.env.FRONTEND_URL}/api/auth/verify/${verificationToken}`;
+    const mailOptions = {
+        from: 'FinTrack',
+        to: email,
+        subject: 'Verify your FinTrack account',
+        html: `
+            <h1>Welcome to FinTrack!</h1>
+            <p>Please click the link below to verify your account:</p>
+            <a href="${verificationLink}">${verificationLink}</a>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        return true;
+    } catch (error) {
+        console.error('Error sending verification email:', error);
+        return false;
+    }
+}
+
 const authController = {
     signup: async (req, res) => {
         const { username, email, password } = req.body;
@@ -137,6 +159,22 @@ const authController = {
             const validPassword = await bcrypt.compare(password, user.password);
             if (!validPassword) {
                 return res.status(401).json({ error: 'Invalid credentials' });
+            }
+
+            if (!user.is_verified) {
+                const newVerificationToken = crypto.randomBytes(32).toString('hex');
+                
+                await pool.query(
+                    'UPDATE users SET verification_token = $1 WHERE id = $2',
+                    [newVerificationToken, user.id]
+                );
+
+                await sendVerificationEmail(email, newVerificationToken);
+
+                return res.status(401).json({ 
+                    error: 'Please verify your email first',
+                    message: 'A new verification email has been sent to your address'
+                });
             }
 
             // Generate new session token
