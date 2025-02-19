@@ -24,13 +24,9 @@ transporter.verify(function(error, success) {
 });
 
 async function sendVerificationEmail(email, verificationToken) {
-    console.log('Attempting to send verification email to:', email);
-    
     const verificationLink = `${process.env.FRONTEND_URL}/api/auth/verify/${verificationToken}`;
-    console.log('Verification link:', verificationLink);
-    
     const mailOptions = {
-        from: `"FinTrack" <${process.env.EMAIL_USER}>`,
+        from: 'FinTrack',
         to: email,
         subject: 'Verify your FinTrack account',
         html: `
@@ -41,20 +37,13 @@ async function sendVerificationEmail(email, verificationToken) {
     };
 
     try {
-        console.log('Email configuration:', {
-            from: process.env.EMAIL_USER,
-            frontendUrl: process.env.FRONTEND_URL
-        });
-        
-        const info = await transporter.sendMail(mailOptions);
-        console.log('Email sent successfully:', info.messageId);
+        await transporter.sendMail(mailOptions);
         return true;
     } catch (error) {
         console.error('Error sending verification email:', error);
-        throw error; // Rethrow to handle in the controller
+        return false;
     }
 }
-
 
 const authController = {
     signup: async (req, res) => {
@@ -190,36 +179,19 @@ const authController = {
             }
 
             if (!user.is_verified) {
-                console.log('User not verified, generating new verification token');
+                const newVerificationToken = crypto.randomBytes(32).toString('hex');
                 
-                try {
-                    // Generate new verification token
-                    const newVerificationToken = crypto.randomBytes(32).toString('hex');
-                    
-                    // Update the verification token in the database
-                    await pool.query(
-                        'UPDATE users SET verification_token = $1 WHERE id = $2',
-                        [newVerificationToken, user.id]
-                    );
+                await pool.query(
+                    'UPDATE users SET verification_token = $1 WHERE id = $2',
+                    [newVerificationToken, user.id]
+                );
 
-                    // Send new verification email
-                    await sendVerificationEmail(email, newVerificationToken);
+                await sendVerificationEmail(email, newVerificationToken);
 
-                    console.log('New verification email sent successfully');
-
-                    return res.status(401).json({ 
-                        success: false,
-                        error: 'Please verify your email first',
-                        message: 'A new verification email has been sent to your address'
-                    });
-                } catch (emailError) {
-                    console.error('Error in verification email process:', emailError);
-                    return res.status(500).json({
-                        success: false,
-                        error: 'Error sending verification email',
-                        message: 'Failed to send verification email. Please try again later.'
-                    });
-                }
+                return res.status(401).json({ 
+                    error: 'Please verify your email first',
+                    message: 'A new verification email has been sent to your address'
+                });
             }
 
             // Generate new session token

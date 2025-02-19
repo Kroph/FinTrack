@@ -48,17 +48,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 const data = await response.json();
-                console.log('Login response:', data); // Debug log
                 
                 if (data.success) {
                     localStorage.setItem('token', data.token);
                     window.location.href = '/home.html';
                 } else {
-                    if (data.message) {
-                        // Show the message from the server
-                        showMessage(data.message, data.error ? 'error' : 'info');
+                    if (messageDiv && data.message) {
+                        messageDiv.textContent = data.message;
+                        messageDiv.style.display = 'block';
+                        messageDiv.style.backgroundColor = '#2196F3';
+                        messageDiv.style.color = 'white';
+                        setTimeout(() => {
+                            messageDiv.style.display = 'none';
+                        }, 5000);
                     } else {
-                        showMessage(data.error || 'Invalid credentials', 'error');
+                        alert(data.error || 'Invalid credentials');
                     }
                 }
             } catch (err) {
