@@ -111,26 +111,18 @@ const authController = {
     },
 
     verify: async (req, res) => {
+        const { token } = req.params;
+        
         try {
+            console.log('Attempting to verify token:', token);
+            
             const result = await pool.query(
-                'UPDATE users SET is_verified = TRUE, verification_token = NULL WHERE verification_token = $1 RETURNING id',
-                [req.params.token]
+                'SELECT * FROM users WHERE verification_token = $1',
+                [token]
             );
-    
-            if (result.rows.length > 0) {
-                return res.redirect(`${process.env.FRONTEND_URL}/login.html?verified=true`);
-            } else {
-                const existingUser = await pool.query(
-                    'SELECT id, is_verified FROM users WHERE verification_token = $1',
-                    [req.params.token]
-                );
-    
-                if (existingUser.rows.length > 0) {
-                    if (existingUser.rows[0].is_verified) {
-                        return res.redirect(`${process.env.FRONTEND_URL}/login.html?already_verified=true`);
-                    }
-                }
-    
+
+            if (result.rows.length === 0) {
+                console.log('No user found with token:', token);
                 return res.status(400).send(`
                     <html>
                         <body>
@@ -141,8 +133,24 @@ const authController = {
                     </html>
                 `);
             }
+
+            const user = result.rows[0];
+
+            if (user.is_verified) {
+                console.log('User already verified:', user.id);
+                return res.redirect(`${process.env.FRONTEND_URL}/login.html?already_verified=true`);
+            }
+
+            await pool.query(
+                'UPDATE users SET is_verified = TRUE, verification_token = NULL WHERE id = $1',
+                [user.id]
+            );
+
+            console.log('User successfully verified:', user.id);
+            return res.redirect(`${process.env.FRONTEND_URL}/login.html?verified=true`);
+            
         } catch (err) {
-            console.error(err);
+            console.error('Verification error:', err);
             res.status(500).send(`
                 <html>
                     <body>

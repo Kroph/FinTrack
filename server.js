@@ -104,6 +104,11 @@ app.use((err, req, res, next) => {
     });
 });
 
+app.use((req, res) => {
+    console.log('404 Not Found:', req.method, req.url);
+    res.status(404).json({ message: 'Not found' });
+});
+
 async function startServer() {
     try {
         console.log('Attempting to initialize database');
