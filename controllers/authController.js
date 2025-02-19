@@ -4,18 +4,33 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const { pool } = require('../config/database');
 
+// Configure nodemailer with logging
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD
+    },
+    debug: true, // Enable debug logging
+    logger: true  // Enable logger
+});
+
+transporter.verify(function(error, success) {
+    if (error) {
+        console.error('Email configuration error:', error);
+    } else {
+        console.log('Email server is ready to send messages');
     }
 });
 
 async function sendVerificationEmail(email, verificationToken) {
+    console.log('Attempting to send verification email to:', email);
+    
     const verificationLink = `${process.env.FRONTEND_URL}/api/auth/verify/${verificationToken}`;
+    console.log('Verification link:', verificationLink);
+    
     const mailOptions = {
-        from: 'FinTrack',
+        from: `"FinTrack" <${process.env.EMAIL_USER}>`,
         to: email,
         subject: 'Verify your FinTrack account',
         html: `
@@ -26,13 +41,20 @@ async function sendVerificationEmail(email, verificationToken) {
     };
 
     try {
-        await transporter.sendMail(mailOptions);
+        console.log('Email configuration:', {
+            from: process.env.EMAIL_USER,
+            frontendUrl: process.env.FRONTEND_URL
+        });
+        
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Email sent successfully:', info.messageId);
         return true;
     } catch (error) {
         console.error('Error sending verification email:', error);
-        return false;
+        throw error; // Rethrow to handle in the controller
     }
 }
+
 
 const authController = {
     signup: async (req, res) => {
@@ -141,6 +163,8 @@ const authController = {
         }
 
         try {
+            console.log('Attempting login for email:', email);
+            
             const result = await pool.query(
                 'SELECT * FROM users WHERE email = $1',
                 [email]
@@ -152,29 +176,42 @@ const authController = {
 
             const user = result.rows[0];
             
-            if (!user.is_verified) {
-                return res.status(401).json({ error: 'Please verify your email first' });
-            }
-
             const validPassword = await bcrypt.compare(password, user.password);
             if (!validPassword) {
                 return res.status(401).json({ error: 'Invalid credentials' });
             }
 
             if (!user.is_verified) {
-                const newVerificationToken = crypto.randomBytes(32).toString('hex');
+                console.log('User not verified, generating new verification token');
                 
-                await pool.query(
-                    'UPDATE users SET verification_token = $1 WHERE id = $2',
-                    [newVerificationToken, user.id]
-                );
+                try {
+                    // Generate new verification token
+                    const newVerificationToken = crypto.randomBytes(32).toString('hex');
+                    
+                    // Update the verification token in the database
+                    await pool.query(
+                        'UPDATE users SET verification_token = $1 WHERE id = $2',
+                        [newVerificationToken, user.id]
+                    );
 
-                await sendVerificationEmail(email, newVerificationToken);
+                    // Send new verification email
+                    await sendVerificationEmail(email, newVerificationToken);
 
-                return res.status(401).json({ 
-                    error: 'Please verify your email first',
-                    message: 'A new verification email has been sent to your address'
-                });
+                    console.log('New verification email sent successfully');
+
+                    return res.status(401).json({ 
+                        success: false,
+                        error: 'Please verify your email first',
+                        message: 'A new verification email has been sent to your address'
+                    });
+                } catch (emailError) {
+                    console.error('Error in verification email process:', emailError);
+                    return res.status(500).json({
+                        success: false,
+                        error: 'Error sending verification email',
+                        message: 'Failed to send verification email. Please try again later.'
+                    });
+                }
             }
 
             // Generate new session token

@@ -1,25 +1,34 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
     const messageDiv = document.getElementById('verification-message');
+    
+    function showMessage(message, type = 'info') {
+        if (!messageDiv) return;
+        
+        const colors = {
+            success: '#4CAF50',
+            info: '#2196F3',
+            error: '#f44336'
+        };
+        
+        messageDiv.textContent = message;
+        messageDiv.style.display = 'block';
+        messageDiv.style.backgroundColor = colors[type];
+        messageDiv.style.color = 'white';
+        messageDiv.style.padding = '10px';
+        messageDiv.style.marginBottom = '10px';
+        messageDiv.style.borderRadius = '4px';
+        
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
+        }, 5000);
+    }
 
-    if (messageDiv) {
-        if (urlParams.get('verified') === 'true') {
-            messageDiv.textContent = 'Email verified successfully! Please login.';
-            messageDiv.style.display = 'block';
-            messageDiv.style.backgroundColor = '#4CAF50';
-            messageDiv.style.color = 'white';
-            setTimeout(() => {
-                messageDiv.style.display = 'none';
-            }, 5000);
-        } else if (urlParams.get('already_verified') === 'true') {
-            messageDiv.textContent = 'Your account is already verified. Please login.';
-            messageDiv.style.display = 'block';
-            messageDiv.style.backgroundColor = '#2196F3';
-            messageDiv.style.color = 'white';
-            setTimeout(() => {
-                messageDiv.style.display = 'none';
-            }, 5000);
-        }
+    // Handle URL parameters for verification messages
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('verified') === 'true') {
+        showMessage('Email verified successfully! Please login.', 'success');
+    } else if (urlParams.get('already_verified') === 'true') {
+        showMessage('Your account is already verified. Please login.', 'info');
     }
 
     const loginForm = document.getElementById('login-form');
@@ -39,25 +48,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 const data = await response.json();
+                console.log('Login response:', data); // Debug log
                 
                 if (data.success) {
                     localStorage.setItem('token', data.token);
                     window.location.href = '/home.html';
                 } else {
-                    if (messageDiv && data.message) {
-                        messageDiv.textContent = data.message;
-                        messageDiv.style.display = 'block';
-                        messageDiv.style.backgroundColor = '#2196F3';
-                        messageDiv.style.color = 'white';
-                        setTimeout(() => {
-                            messageDiv.style.display = 'none';
-                        }, 5000);
+                    if (data.message) {
+                        // Show the message from the server
+                        showMessage(data.message, data.error ? 'error' : 'info');
                     } else {
-                        alert(data.error || 'Invalid credentials');
+                        showMessage(data.error || 'Invalid credentials', 'error');
                     }
                 }
             } catch (err) {
-                alert('Error logging in');
+                console.error('Login error:', err);
+                showMessage('Error logging in. Please try again.', 'error');
             }
         });
     }
