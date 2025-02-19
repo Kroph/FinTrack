@@ -34,7 +34,7 @@ if (process.env.NODE_ENV === 'production') {
 // CORS configuration
 const corsOptions = {
     origin: process.env.NODE_ENV === 'production' 
-        ? process.env.FRONTEND_URL 
+        ? 'https://fintrack.onrender.com'
         : 'http://localhost:10000',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
