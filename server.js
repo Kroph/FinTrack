@@ -16,8 +16,8 @@ const port = process.env.PORT || 10000;
 
 // Rate limiting
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100 // limit each IP to 100 requests per windowMs
+    windowMs: 15 * 60 * 1000,
+    max: 100
 });
 
 // Production security headers
@@ -46,10 +46,13 @@ app.use(cors(corsOptions));
 app.use(limiter);
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Session configuration
 app.use(session({
     store: new pgSession({
         pool: pool,
-        tableName: 'user_sessions'
+        tableName: 'user_sessions',
+        createTableIfMissing: true
     }),
     secret: process.env.SESSION_SECRET || 'fallback_secret',
     resave: false,
@@ -60,11 +63,6 @@ app.use(session({
         maxAge: 24 * 60 * 60 * 1000
     }
 }));
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'OK' });
-});
 
 // Routes
 app.get('/', (req, res) => {
@@ -79,34 +77,35 @@ app.use('/api/expenses', expensesRoutes);
 app.use((err, req, res, next) => {
     console.error(err.stack);
     
-    // Database connection errors
-    if (err.code === 'ECONNREFUSED' || err.code === '57P01') {
-        return res.status(503).json({
+    if (!res.headersSent) {
+        if (err.code === 'ECONNREFUSED' || err.code === '57P01') {
+            return res.status(503).json({
+                success: false,
+                error: 'Database connection failed'
+            });
+        }
+        
+        if (err.name === 'SessionError') {
+            return res.status(401).json({
+                success: false,
+                error: 'Session expired'
+            });
+        }
+        
+        res.status(500).json({
             success: false,
-            error: 'Database connection failed'
+            error: process.env.NODE_ENV === 'production' 
+                ? 'Internal Server Error' 
+                : err.message
         });
     }
-    
-    // Session errors
-    if (err.name === 'SessionError') {
-        return res.status(401).json({
-            success: false,
-            error: 'Session expired'
-        });
-    }
-    
-    // Generic error response
-    res.status(500).json({
-        success: false,
-        error: process.env.NODE_ENV === 'production' 
-            ? 'Internal Server Error' 
-            : err.message
-    });
 });
 
 app.use((req, res) => {
-    console.log('404 Not Found:', req.method, req.url);
-    res.status(404).json({ message: 'Not found' });
+    if (!res.headersSent) {
+        console.log('404 Not Found:', req.method, req.url);
+        res.status(404).json({ message: 'Not found' });
+    }
 });
 
 async function startServer() {
