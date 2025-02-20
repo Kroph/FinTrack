@@ -152,6 +152,8 @@ const authController = {
         }
     },
 
+    // Update the login function in authController.js
+
     login: async (req, res) => {
         const { email, password } = req.body;
 
@@ -179,18 +181,20 @@ const authController = {
             }
 
             if (!user.is_verified) {
-                const newVerificationToken = crypto.randomBytes(32).toString('hex');
+                // Generate new verification code
+                const newCode = generateVerificationCode();
+                const codeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
                 
                 await pool.query(
-                    'UPDATE users SET verification_token = $1 WHERE id = $2',
-                    [newVerificationToken, user.id]
+                    'UPDATE users SET verification_code = $1, verification_code_expires = $2 WHERE id = $3',
+                    [newCode, codeExpires, user.id]
                 );
 
-                await sendVerificationEmail(email, newVerificationToken);
+                await sendVerificationCode(email, newCode);
 
                 return res.status(401).json({ 
                     error: 'Please verify your email first',
-                    message: 'A new verification email has been sent to your address'
+                    message: 'A new verification code has been sent to your email'
                 });
             }
 
@@ -215,7 +219,7 @@ const authController = {
                     userId: user.id,
                     sessionToken: sessionToken 
                 },
-                process.env.JWT_SECRET || 'your-secret-key',
+                process.env.JWT_SECRET,
                 { expiresIn: '24h' }
             );
 
