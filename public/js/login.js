@@ -43,7 +43,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.setItem('token', data.token);
                     window.location.href = '/home.html';
                 } else if (data.requiresVerification) {
-                    window.location.href = `/verify.html?email=${encodeURIComponent(data.email)}`;
+                    sessionStorage.setItem('verificationEmail', email);
+                    window.location.href = '/verify.html';
                 } else {
                     showMessage(data.error || 'Invalid credentials', 'error');
                 }

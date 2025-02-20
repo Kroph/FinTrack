@@ -19,12 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const data = await response.json();
                 if (data.success) {
-                    if (data.requiresVerification) {
-                        window.location.href = `/verify.html?email=${encodeURIComponent(email)}`;
-                    } else {
-                        alert('Account created successfully');
-                        window.location.href = '/login.html';
-                    }
+                    sessionStorage.setItem('verificationEmail', email);
+                    window.location.href = '/verify.html';
                 } else {
                     alert(data.error || 'Error creating account');
                 }
