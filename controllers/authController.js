@@ -4,35 +4,29 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const { pool } = require('../config/database');
 
-// Configure nodemailer with logging
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD
-    },
-    debug: true, // Enable debug logging
-    logger: true  // Enable logger
-});
-
-transporter.verify(function(error, success) {
-    if (error) {
-        console.error('Email configuration error:', error);
-    } else {
-        console.log('Email server is ready to send messages');
     }
 });
 
-async function sendVerificationEmail(email, verificationToken) {
-    const verificationLink = `${process.env.FRONTEND_URL}/api/auth/verify/${verificationToken}`;
+// Generate a random 6-digit verification code
+function generateVerificationCode() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+async function sendVerificationCode(email, code) {
     const mailOptions = {
         from: 'FinTrack',
         to: email,
-        subject: 'Verify your FinTrack account',
+        subject: 'Your FinTrack Verification Code',
         html: `
             <h1>Welcome to FinTrack!</h1>
-            <p>Please click the link below to verify your account:</p>
-            <a href="${verificationLink}">${verificationLink}</a>
+            <p>Your verification code is:</p>
+            <h2 style="font-size: 32px; letter-spacing: 5px; text-align: center; padding: 20px; background-color: #f5f5f5; border-radius: 5px;">${code}</h2>
+            <p>This code will expire in 15 minutes.</p>
         `
     };
 
@@ -48,11 +42,11 @@ async function sendVerificationEmail(email, verificationToken) {
 const authController = {
     signup: async (req, res) => {
         const { username, email, password } = req.body;
-        const verificationToken = crypto.randomBytes(32).toString('hex');
+        const verificationCode = generateVerificationCode();
+        const codeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
 
         try {
             if (!username || !email || !password) {
-                console.log('Missing required fields:', { username, email, password });
                 return res.status(400).json({ error: 'All fields are required' });
             }
 
@@ -72,26 +66,15 @@ const authController = {
             const hashedPassword = await bcrypt.hash(password, 12);
             
             const result = await pool.query(
-                'INSERT INTO users (username, email, password, verification_token) VALUES ($1, $2, $3, $4) RETURNING id',
-                [username, email, hashedPassword, verificationToken]
+                'INSERT INTO users (username, email, password, verification_code, verification_code_expires) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+                [username, email, hashedPassword, verificationCode, codeExpires]
             );
 
-            const verificationLink = `${process.env.FRONTEND_URL}/api/auth/verify/${verificationToken}`;
-            const mailOptions = {
-                from: 'FinTrack',
-                to: email,
-                subject: 'Verify your FinTrack account',
-                html: `
-                    <h1>Welcome to FinTrack!</h1>
-                    <p>Please click the link below to verify your account:</p>
-                    <a href="${verificationLink}">${verificationLink}</a>
-                `
-            };
-
-            await transporter.sendMail(mailOptions);
+            await sendVerificationCode(email, verificationCode);
+            
             res.json({ 
                 success: true, 
-                message: 'Please check your email to verify your account' 
+                message: 'Please check your email for the verification code'
             });
         } catch (err) {
             console.error('Signup error:', err);
@@ -100,55 +83,72 @@ const authController = {
     },
 
     verify: async (req, res) => {
-        const { token } = req.params;
+        const { email, code } = req.body;
         
         try {
-            console.log('Attempting to verify token:', token);
-            
             const result = await pool.query(
-                'SELECT * FROM users WHERE verification_token = $1',
-                [token]
+                'SELECT * FROM users WHERE email = $1 AND verification_code = $2 AND verification_code_expires > NOW() AND NOT is_verified',
+                [email, code]
             );
 
             if (result.rows.length === 0) {
-                console.log('No user found with token:', token);
-                return res.status(400).send(`
-                    <html>
-                        <body>
-                            <h1>Invalid or Expired Verification Link</h1>
-                            <p>The verification link may have already been used or has expired.</p>
-                            <a href="${process.env.FRONTEND_URL}/login.html">Go to Login</a>
-                        </body>
-                    </html>
-                `);
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid or expired verification code'
+                });
             }
 
             const user = result.rows[0];
 
-            if (user.is_verified) {
-                console.log('User already verified:', user.id);
-                return res.redirect(`${process.env.FRONTEND_URL}/login.html?already_verified=true`);
-            }
-
             await pool.query(
-                'UPDATE users SET is_verified = TRUE, verification_token = NULL WHERE id = $1',
+                'UPDATE users SET is_verified = TRUE, verification_code = NULL, verification_code_expires = NULL WHERE id = $1',
                 [user.id]
             );
 
-            console.log('User successfully verified:', user.id);
-            return res.redirect(`${process.env.FRONTEND_URL}/login.html?verified=true`);
+            res.json({
+                success: true,
+                message: 'Email verified successfully'
+            });
             
         } catch (err) {
             console.error('Verification error:', err);
-            res.status(500).send(`
-                <html>
-                    <body>
-                        <h1>Error Verifying Account</h1>
-                        <p>An error occurred while verifying your account. Please try again later.</p>
-                        <a href="${process.env.FRONTEND_URL}/login.html">Go to Login</a>
-                    </body>
-                </html>
-            `);
+            res.status(500).json({
+                success: false,
+                error: 'Error verifying account'
+            });
+        }
+    },
+
+    resendCode: async (req, res) => {
+        const { email } = req.body;
+        const newCode = generateVerificationCode();
+        const codeExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+        try {
+            const result = await pool.query(
+                'UPDATE users SET verification_code = $1, verification_code_expires = $2 WHERE email = $3 AND NOT is_verified RETURNING id',
+                [newCode, codeExpires, email]
+            );
+
+            if (result.rows.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Email not found or already verified'
+                });
+            }
+
+            await sendVerificationCode(email, newCode);
+
+            res.json({
+                success: true,
+                message: 'New verification code sent'
+            });
+        } catch (err) {
+            console.error('Error resending code:', err);
+            res.status(500).json({
+                success: false,
+                error: 'Error sending verification code'
+            });
         }
     },
 

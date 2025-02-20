@@ -71,10 +71,36 @@ async function initDB() {
                 email VARCHAR(100) UNIQUE NOT NULL,
                 password VARCHAR(255) NOT NULL,
                 is_verified BOOLEAN DEFAULT FALSE,
-                verification_token VARCHAR(100),
+                verification_code VARCHAR(6),
+                verification_code_expires TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+            
+            -- Migration for existing tables
+            DO $$ 
+            BEGIN 
+                -- Drop verification_token if it exists
+                IF EXISTS (
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'users' 
+                    AND column_name = 'verification_token'
+                ) THEN 
+                    ALTER TABLE users DROP COLUMN verification_token;
+                END IF;
 
+                -- Add new columns if they don't exist
+                BEGIN
+                    ALTER TABLE users 
+                    ADD COLUMN verification_code VARCHAR(6),
+                    ADD COLUMN verification_code_expires TIMESTAMP;
+                EXCEPTION
+                    WHEN duplicate_column THEN 
+                        NULL;
+                END;
+            END $$;
+
+            -- Rest of your table creation code...
             CREATE TABLE IF NOT EXISTS income (
                 id SERIAL PRIMARY KEY,
                 user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
