@@ -17,15 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({ username, email, password })
                 });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Error signing up');
-                }
-
                 const data = await response.json();
                 if (data.success) {
-                    alert('Please check your email to verify your account');
-                    window.location.href = '/login.html';
+                    if (data.requiresVerification) {
+                        window.location.href = `/verify.html?email=${encodeURIComponent(email)}`;
+                    } else {
+                        alert('Account created successfully');
+                        window.location.href = '/login.html';
+                    }
                 } else {
                     alert(data.error || 'Error creating account');
                 }

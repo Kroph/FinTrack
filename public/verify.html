@@ -1,9 +1,10 @@
+<!-- verify.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verify Account</title>
+    <title>Verify Account - FinTrack</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -27,6 +28,14 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Get email from URL parameters if available
+            const urlParams = new URLSearchParams(window.location.search);
+            const emailFromURL = urlParams.get('email');
+            if (emailFromURL) {
+                const emailInput = document.getElementById('email');
+                emailInput.value = emailFromURL;
+                emailInput.readOnly = true; // Make it read-only since we know it's correct
+            }
             const verificationForm = document.getElementById('verification-form');
             const resendButton = document.getElementById('resend-code');
             const messageDiv = document.getElementById('verification-message');

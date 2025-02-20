@@ -152,8 +152,6 @@ const authController = {
         }
     },
 
-    // Update the login function in authController.js
-
     login: async (req, res) => {
         const { email, password } = req.body;
 
