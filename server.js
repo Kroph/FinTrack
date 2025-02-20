@@ -10,6 +10,7 @@ const { pool, initDB } = require('./config/database');
 const authRoutes = require('./routes/auth');
 const incomeRoutes = require('./routes/income');
 const expensesRoutes = require('./routes/expenses');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const port = process.env.PORT || 10000;
@@ -46,6 +47,7 @@ app.use(cors(corsOptions));
 app.use(limiter);
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/api/admin', adminRoutes);
 
 // Session configuration
 app.use(session({

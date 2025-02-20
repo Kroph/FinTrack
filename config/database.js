@@ -83,6 +83,21 @@ async function initDB() {
             );
         `);
 
+        await client.query(`
+            DO $$ 
+            BEGIN
+                -- Add is_admin column if it doesn't exist
+                IF NOT EXISTS (
+                    SELECT 1 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'users' 
+                    AND column_name = 'is_admin'
+                ) THEN
+                    ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;
+                END IF;
+            END $$;
+        `);
+
         console.log('Database initialized successfully.');
     } catch (error) {
         console.error('Database initialization failed:', error);
