@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const messageDiv = document.getElementById('verification-message');
     const codeInputs = document.querySelectorAll('.code-input');
     
-    // Get email from sessionStorage (set during login/signup)
     const email = sessionStorage.getItem('verificationEmail');
     if (!email) {
         window.location.href = '/login.html';
@@ -17,7 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
         messageDiv.style.display = 'block';
     }
 
-    // Handle code input behavior
     codeInputs.forEach((input, index) => {
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Backspace' && !input.value && index > 0) {
@@ -41,6 +39,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (value && index < codeInputs.length - 1) {
                 codeInputs[index + 1].focus();
             }
+
+            if (index === codeInputs.length - 1 && value) {
+                const code = Array.from(codeInputs)
+                    .map(input => input.value)
+                    .join('');
+                if (code.length === 6) {
+                    verifyCode(code);
+                }
+            }
         });
 
         input.addEventListener('paste', (e) => {
@@ -62,6 +69,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function verifyCode(code) {
+        const verifyButton = document.querySelector('.verify-btn');
+        verifyButton.disabled = true;
+        verifyButton.textContent = 'Verifying...';
+
         try {
             const response = await fetch('/api/auth/verify', {
                 method: 'POST',
@@ -77,11 +88,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             
             if (data.success) {
-                showMessage('Email verified successfully! Redirecting...', 'success');
+                showMessage('Email verified successfully! Redirecting to login...', 'success');
                 sessionStorage.removeItem('verificationEmail');
+                
                 setTimeout(() => {
-                    window.location.href = '/login.html';
-                }, 2000);
+                    window.location.href = '/login.html?verified=true';
+                }, 1500);
             } else {
                 showMessage(data.error || 'Verification failed', 'error');
                 codeInputs.forEach(input => input.value = '');
@@ -89,6 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             showMessage('Error verifying code. Please try again.', 'error');
+        } finally {
+            verifyButton.disabled = false;
+            verifyButton.textContent = 'Verify Email';
         }
     }
 
@@ -105,6 +120,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     resendButton.addEventListener('click', async () => {
         resendButton.disabled = true;
+        resendButton.textContent = 'Sending...';
+
         try {
             const response = await fetch('/api/auth/resend-code', {
                 method: 'POST',
@@ -119,13 +136,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 data.success ? 'New verification code sent!' : (data.error || 'Failed to send code'),
                 data.success ? 'success' : 'error'
             );
+
+            if (data.success) {
+                let countdown = 60;
+                const countdownInterval = setInterval(() => {
+                    countdown--;
+                    resendButton.textContent = `Resend Code (${countdown}s)`;
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                        resendButton.textContent = 'Resend Code';
+                        resendButton.disabled = false;
+                    }
+                }, 1000);
+            }
         } catch (error) {
             showMessage('Error sending verification code', 'error');
-        } finally {
             resendButton.disabled = false;
-            setTimeout(() => {
-                resendButton.disabled = false;
-            }, 60000); // Enable after 1 minute
+            resendButton.textContent = 'Resend Code';
         }
     });
 });

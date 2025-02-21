@@ -1,5 +1,26 @@
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
+    const messageDiv = document.getElementById('verification-message');
+    
+    function showMessage(message, type) {
+        if (!messageDiv) return;
+        
+        messageDiv.textContent = message;
+        messageDiv.className = `message ${type}`;
+        messageDiv.style.display = 'block';
+        
+        if (type === 'success') {
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('verified') === 'true') {
+        showMessage('Email verified successfully! Please log in.', 'success');
+        window.history.replaceState({}, document.title, '/login.html');
+    }
     
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
