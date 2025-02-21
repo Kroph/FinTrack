@@ -21,8 +21,14 @@
 
     <div class="middle">
         <div class="left-panel">
-            <h2 id="form-title">Enter Expense</h2>
-            <form id="expense-form">
+            <h2 id="form-title">Add Transaction</h2>
+            <form id="transaction-form">
+                <label for="type">Type:</label><br>
+                <select id="type" required>
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                </select><br><br>
+
                 <label for="amount">Amount:</label><br>
                 <input type="number" id="amount" step="0.01" required><br><br>
 
@@ -35,8 +41,8 @@
                 <button type="submit">Add</button>
             </form>
 
-            <h3>List</h3>
-            <div class="expense-list" id="expense-list">
+            <h3>Transactions</h3>
+            <div class="transaction-list" id="transaction-list">
             </div>
         </div>
 
@@ -52,6 +58,6 @@
         </div>
     </footer>   
 
-    <script src="js/expenses.js"></script>
+    <script src="js/transactions.js"></script>
 </body>
 </html>

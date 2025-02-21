@@ -8,8 +8,7 @@ require('dotenv').config();
 
 const { pool, initDB } = require('./config/database');
 const authRoutes = require('./routes/auth');
-const incomeRoutes = require('./routes/income');
-const expensesRoutes = require('./routes/expenses');
+const transactionsRoutes = require('./routes/transactions');
 const adminRoutes = require('./routes/admin');
 
 const app = express();
@@ -72,8 +71,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
-app.use('/api/income', incomeRoutes);
-app.use('/api/expenses', expensesRoutes);
+app.use('/api/transactions', transactionsRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -42,24 +42,17 @@ async function initDB() {
                 is_verified BOOLEAN DEFAULT FALSE,
                 verification_code VARCHAR(6),
                 verification_code_expires TIMESTAMP,
+                is_admin BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
-            CREATE TABLE IF NOT EXISTS income (
+            CREATE TABLE IF NOT EXISTS transactions (
                 id SERIAL PRIMARY KEY,
                 user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
                 amount NUMERIC(10, 2) NOT NULL,
                 description TEXT,
                 date DATE NOT NULL DEFAULT CURRENT_DATE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS expenses (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-                amount NUMERIC(10, 2) NOT NULL,
-                description TEXT,
-                date DATE NOT NULL DEFAULT CURRENT_DATE,
+                type VARCHAR(10) NOT NULL CHECK (type IN ('expense', 'income')),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
@@ -79,19 +72,6 @@ async function initDB() {
             );
 
             CREATE INDEX IF NOT EXISTS "IDX_user_sessions_expire" ON "user_sessions" ("expire");
-
-            DO $$ 
-            BEGIN
-                -- Add is_admin column if it doesn't exist
-                IF NOT EXISTS (
-                    SELECT 1 
-                    FROM information_schema.columns 
-                    WHERE table_name = 'users' 
-                    AND column_name = 'is_admin'
-                ) THEN
-                    ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;
-                END IF;
-            END $$;
         `);
 
         console.log('Database initialized successfully.');

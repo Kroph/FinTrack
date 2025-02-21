@@ -14,8 +14,7 @@ body {
     color: white;
 }
 
-.logout-button{
-
+.logout-button {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -41,6 +40,7 @@ body {
     color: white;
 }
 
+/* Updated for transactions (formerly expense-item) */
 .expense-item {
     display: flex;
     justify-content: space-between;
@@ -108,4 +108,38 @@ body {
     height: 400px;
     width: 400px;
     background-color: white;
+}
+
+.type {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    text-transform: capitalize;
+    background-color: #f0f0f0;
+    margin-left: 10px;
+}
+
+select, input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+    margin-bottom: 8px;
+}
+
+.income {
+    color: #4CAF50 !important;
+}
+
+.expense {
+    color: #f44336 !important;
+}
+
+.edit-btn:hover {
+    background-color: #45a049;
+}
+
+.delete-btn:hover {
+    background-color: #da190b;
 }
