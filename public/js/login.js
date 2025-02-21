@@ -1,27 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const messageDiv = document.getElementById('verification-message');
-    
-    function showMessage(message, type = 'info') {
-        if (!messageDiv) return;
-        
-        messageDiv.textContent = message;
-        messageDiv.style.display = 'block';
-        messageDiv.style.backgroundColor = {
-            success: '#4CAF50',
-            info: '#2196F3',
-            error: '#f44336'
-        }[type];
-        messageDiv.style.color = 'white';
-        messageDiv.style.padding = '10px';
-        messageDiv.style.marginBottom = '10px';
-        messageDiv.style.borderRadius = '4px';
-        
-        setTimeout(() => {
-            messageDiv.style.display = 'none';
-        }, 5000);
-    }
-
     const loginForm = document.getElementById('login-form');
+    
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -42,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.success) {
                     localStorage.setItem('token', data.token);
                     window.location.href = '/home.html';
-                } else if (data.requiresVerification) {
+                } else if (data.error === 'Please verify your email first') {
                     sessionStorage.setItem('verificationEmail', email);
                     window.location.href = '/verify.html';
                 } else {
