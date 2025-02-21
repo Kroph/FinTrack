@@ -34,16 +34,6 @@ async function initDB() {
     const client = await pool.connect();
     try {
         await client.query(`
-            CREATE TABLE IF NOT EXISTS "user_sessions" (
-                "sid" varchar NOT NULL COLLATE "default" PRIMARY KEY,
-                "sess" json NOT NULL,
-                "expire" timestamp(6) NOT NULL
-            );
-
-            CREATE INDEX IF NOT EXISTS "IDX_user_sessions_expire" ON "user_sessions" ("expire");
-        `);
-
-        await client.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
                 username VARCHAR(50) UNIQUE NOT NULL,
@@ -81,9 +71,15 @@ async function initDB() {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(user_id, device_id)
             );
-        `);
 
-        await client.query(`
+            CREATE TABLE IF NOT EXISTS "user_sessions" (
+                "sid" varchar NOT NULL COLLATE "default" PRIMARY KEY,
+                "sess" json NOT NULL,
+                "expire" timestamp(6) NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS "IDX_user_sessions_expire" ON "user_sessions" ("expire");
+
             DO $$ 
             BEGIN
                 -- Add is_admin column if it doesn't exist
