@@ -9,7 +9,32 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    loadUserInfo();
     loadTransactions();
+
+    async function loadUserInfo() {
+        try {
+            const response = await fetch('/api/auth/user', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (response.status === 401) {
+                localStorage.removeItem('token');
+                window.location.href = '/login.html';
+                return;
+            }
+
+            const data = await response.json();
+            if (data.success) {
+                const userElement = document.querySelector('.user');
+                userElement.textContent = `Hello, ${data.user.username}`;
+            }
+        } catch (error) {
+            console.error('Error loading user info:', error);
+        }
+    }
 
     transactionForm.addEventListener('submit', async (e) => {
         e.preventDefault();
