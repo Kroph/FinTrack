@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FinTrack</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
         :root {
             --primary: #4361ee;
@@ -1336,14 +1338,15 @@
             });
         }
 
-        // Helper functions
         function calculateDateTotal(transactions) {
             let total = 0;
             transactions.forEach(transaction => {
+                const amount = parseFloat(transaction.amount) || 0;
+                
                 if (transaction.type === 'income') {
-                    total += transaction.amount;
+                    total += amount;
                 } else {
-                    total -= transaction.amount;
+                    total -= amount;
                 }
             });
             return total;
