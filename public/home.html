@@ -795,15 +795,14 @@
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             document.getElementById('username').textContent = user.username || 'User';
             
-            // Populate category dropdown based on default type
             populateCategories();
+
+            loadTransactions();
             
-            // Render transactions and update totals
             renderTransactions();
             updateBalanceSummary();
-            
-            // Form submission
-            document.getElementById('transaction-form').addEventListener('submit', (e) => {
+
+            document.getElementById('transaction-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
                 const type = document.getElementById('transaction-type').value;
@@ -812,34 +811,85 @@
                 const description = document.getElementById('description').value;
                 const date = document.getElementById('date').value;
                 
-                // Create new transaction object
-                const newTransaction = {
-                    id: Date.now(), // Use timestamp as ID
-                    type,
-                    category,
-                    amount,
-                    description,
-                    date
-                };
-                
-                // Add to transactions array
-                transactions.unshift(newTransaction);
-                
-                // Clear form
-                e.target.reset();
-                document.getElementById('date').valueAsDate = new Date();
-                populateCategories(); // Reset categories dropdown
-                
-                // Update UI
-                renderTransactions();
-                updateBalanceSummary();
-                
-                // Notify chart of transaction updates
-                window.dispatchEvent(new Event('transactionsUpdated'));
-            });
-            
-            // Edit form submission
-            document.getElementById('edit-form').addEventListener('submit', (e) => {
+                try {
+                    // Get token from localStorage
+                    const token = localStorage.getItem('token');
+                    
+                    // Send transaction to server
+                    const response = await fetch('/api/transactions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            type,
+                            category,
+                            amount,
+                            description,
+                            date
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to save transaction');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Add to local transactions array for immediate display
+                    transactions.unshift(data.transaction);
+                    
+                    // Clear form
+                    e.target.reset();
+                    document.getElementById('date').valueAsDate = new Date();
+                    populateCategories(); // Reset categories dropdown
+                    
+                    // Update UI
+                    renderTransactions();
+                    updateBalanceSummary();
+                    
+                    // Notify chart of transaction updates
+                    window.dispatchEvent(new Event('transactionsUpdated'));
+                    
+                } catch (error) {
+                    console.error('Error saving transaction:', error);
+                    alert('Failed to save transaction. Please try again.');
+                }
+            });  
+
+            async function loadTransactions() {
+                try {
+                    const token = localStorage.getItem('token');
+                    
+                    const response = await fetch('/api/transactions', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to load transactions');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Replace local transactions array with server data
+                    transactions = data.transactions;
+                    
+                    // Update UI
+                    renderTransactions();
+                    updateBalanceSummary();
+                    
+                    // Notify chart of transaction updates
+                    window.dispatchEvent(new Event('transactionsUpdated'));
+                    
+                } catch (error) {
+                    console.error('Error loading transactions:', error);
+                }
+            }
+
+            document.getElementById('edit-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
                 const type = document.getElementById('edit-type').value;
@@ -848,19 +898,39 @@
                 const description = document.getElementById('edit-description').value;
                 const date = document.getElementById('edit-date').value;
                 
-                // Update transaction
+                // Get transaction ID
                 const transactionId = parseInt(document.getElementById('edit-form').dataset.id);
-                const index = transactions.findIndex(t => t.id === transactionId);
                 
-                if (index !== -1) {
-                    transactions[index] = {
-                        ...transactions[index],
-                        type,
-                        category,
-                        amount,
-                        description,
-                        date
-                    };
+                try {
+                    const token = localStorage.getItem('token');
+                    
+                    // Update transaction on server
+                    const response = await fetch(`/api/transactions/${transactionId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            type,
+                            category,
+                            amount,
+                            description,
+                            date
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to update transaction');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Update in local array
+                    const index = transactions.findIndex(t => t.id === transactionId);
+                    if (index !== -1) {
+                        transactions[index] = data.transaction;
+                    }
                     
                     // Update UI
                     renderTransactions();
@@ -869,6 +939,9 @@
                     
                     // Notify chart of transaction updates
                     window.dispatchEvent(new Event('transactionsUpdated'));
+                } catch (error) {
+                    console.error('Error updating transaction:', error);
+                    alert('Failed to update transaction. Please try again.');
                 }
             });
         });
@@ -1201,11 +1274,35 @@
             document.getElementById('editModal').style.display = 'none';
         }
         
-        function deleteTransaction(id) {
-            transactions = transactions.filter(t => t.id !== id);
-            renderTransactions();
-            updateBalanceSummary();
-            window.dispatchEvent(new Event('transactionsUpdated'));
+        async function deleteTransaction(id) {
+            try {
+                const token = localStorage.getItem('token');
+                
+                // Delete transaction from server
+                const response = await fetch(`/api/transactions/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to delete transaction');
+                }
+                
+                // Remove from local array
+                transactions = transactions.filter(t => t.id !== id);
+                
+                // Update UI
+                renderTransactions();
+                updateBalanceSummary();
+                
+                // Notify chart of transaction updates
+                window.dispatchEvent(new Event('transactionsUpdated'));
+            } catch (error) {
+                console.error('Error deleting transaction:', error);
+                alert('Failed to delete transaction. Please try again.');
+            }
         }
         
         function logout() {
