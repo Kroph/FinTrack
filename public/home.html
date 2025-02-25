@@ -734,48 +734,7 @@
         };
         
         // Mock data for demonstration
-        let transactions = [
-            {
-                id: 1,
-                type: 'income',
-                category: 'Salary',
-                amount: 2500,
-                description: 'Monthly salary',
-                date: '2025-02-20'
-            },
-            {
-                id: 2,
-                type: 'expense',
-                category: 'Apartment',
-                amount: 950,
-                description: 'Rent payment',
-                date: '2025-02-20'
-            },
-            {
-                id: 3,
-                type: 'expense',
-                category: 'Food',
-                amount: 85.75,
-                description: 'Grocery shopping',
-                date: '2025-02-19'
-            },
-            {
-                id: 4,
-                type: 'expense',
-                category: 'Transportation',
-                amount: 45.50,
-                description: 'Gas fill-up',
-                date: '2025-02-18'
-            },
-            {
-                id: 5,
-                type: 'income',
-                category: 'Gift',
-                amount: 200,
-                description: 'Birthday gift from mom',
-                date: '2025-02-15'
-            }
-        ];
+        let transactions = [];
         
         // Filter and sort state
         let filters = {
@@ -791,8 +750,8 @@
             // Set default date to today
             document.getElementById('date').valueAsDate = new Date();
             
-            // Just for demo - would normally check authentication
-            document.getElementById('username').textContent = 'Demo User';
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            document.getElementById('username').textContent = user.username;
             
             // Populate category dropdown based on default type
             populateCategories();
@@ -971,7 +930,7 @@
             
             renderTransactions();
         }
-        
+
         function renderTransactions() {
             const list = document.getElementById('transaction-list');
             list.innerHTML = '';

@@ -564,21 +564,11 @@
                     `;
                     
                     // Add promote/revoke buttons based on admin status
-                    if (user.is_admin) {
-                        actionButtons = `
-                            <button class="action-btn revoke-btn" onclick="revokeAdmin(${user.id})">
-                                <i class="fas fa-user-minus"></i> Revoke Admin
-                            </button>
-                            ${actionButtons}
-                        `;
-                    } else {
-                        actionButtons = `
-                            <button class="action-btn promote-btn" onclick="promoteToAdmin(${user.id})">
-                                <i class="fas fa-user-plus"></i> Make Admin
-                            </button>
-                            ${actionButtons}
-                        `;
-                    }
+                    actionButtons = `
+                        <button class="action-btn delete-btn" onclick="showDeleteModal(${user.id})">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    `;
                     
                     userCard.innerHTML = `
                         <div class="user-info">
@@ -669,22 +659,11 @@
                         </button>
                     `;
                     
-                    // Add promote/revoke buttons based on admin status
-                    if (user.is_admin) {
-                        actionButtons = `
-                            <button class="action-btn revoke-btn" onclick="revokeAdmin(${user.id})">
-                                <i class="fas fa-user-minus"></i> Revoke Admin
-                            </button>
-                            ${actionButtons}
-                        `;
-                    } else {
-                        actionButtons = `
-                            <button class="action-btn promote-btn" onclick="promoteToAdmin(${user.id})">
-                                <i class="fas fa-user-plus"></i> Make Admin
-                            </button>
-                            ${actionButtons}
-                        `;
-                    }
+                    actionButtons = `
+                        <button class="action-btn delete-btn" onclick="showDeleteModal(${user.id})">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    `;
                     
                     userCard.innerHTML = `
                         <div class="user-info">
@@ -720,55 +699,6 @@
 
         function closeModal() {
             document.getElementById('confirmModal').style.display = 'none';
-        }
-
-        // Add missing admin promotion functions
-        async function promoteToAdmin(userId) {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`/api/admin/users/${userId}/promote`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to promote user to admin');
-                }
-                
-                // Reload users to reflect changes
-                loadUsers();
-                
-            } catch (error) {
-                console.error('Promote admin error:', error);
-                alert(`Error promoting user: ${error.message}`);
-            }
-        }
-
-        async function revokeAdmin(userId) {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`/api/admin/users/${userId}/revoke`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to revoke admin privileges');
-                }
-                
-                // Reload users to reflect changes
-                loadUsers();
-                
-            } catch (error) {
-                console.error('Revoke admin error:', error);
-                alert(`Error revoking admin privileges: ${error.message}`);
-            }
         }
 
         async function confirmDelete() {
