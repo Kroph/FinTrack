@@ -539,16 +539,7 @@
                         '<span class="user-role role-admin">Admin</span>' : 
                         '<span class="user-role role-user">User</span>';
                     
-                    const adminActions = user.is_admin ? 
-                        `<button class="action-btn revoke-btn" onclick="revokeAdmin(${user.id})">
-                            <i class="fas fa-user-minus"></i> Revoke Admin
-                        </button>` : 
-                        `<button class="action-btn promote-btn" onclick="promoteToAdmin(${user.id})">
-                            <i class="fas fa-user-plus"></i> Make Admin
-                        </button>`;
-                    
-                    const createdDate = new Date(user.created_at).toLocaleDateString();
-                    
+                    // Admin role without promotion options
                     userCard.innerHTML = `
                         <div class="user-info">
                             <div class="user-name">${user.username}</div>
@@ -557,7 +548,6 @@
                             <div class="user-date">Joined: ${createdDate}</div>
                         </div>
                         <div class="user-actions">
-                            ${adminActions}
                             <button class="action-btn delete-btn" onclick="showDeleteModal(${user.id})">
                                 <i class="fas fa-trash"></i> Delete
                             </button>
@@ -618,17 +608,10 @@
                     const userCard = document.createElement('div');
                     userCard.className = 'user-card';
                     
+                    // Admin role without promotion options, same for search results
                     const userRole = user.is_admin ? 
                         '<span class="user-role role-admin">Admin</span>' : 
                         '<span class="user-role role-user">User</span>';
-                    
-                    const adminActions = user.is_admin ? 
-                        `<button class="action-btn revoke-btn" onclick="revokeAdmin(${user.id})">
-                            <i class="fas fa-user-minus"></i> Revoke Admin
-                        </button>` : 
-                        `<button class="action-btn promote-btn" onclick="promoteToAdmin(${user.id})">
-                            <i class="fas fa-user-plus"></i> Make Admin
-                        </button>`;
                     
                     const createdDate = new Date(user.created_at).toLocaleDateString();
                     
@@ -640,7 +623,6 @@
                             <div class="user-date">Joined: ${createdDate}</div>
                         </div>
                         <div class="user-actions">
-                            ${adminActions}
                             <button class="action-btn delete-btn" onclick="showDeleteModal(${user.id})">
                                 <i class="fas fa-trash"></i> Delete
                             </button>
@@ -671,6 +653,7 @@
             document.getElementById('confirmModal').style.display = 'none';
         }
         
+        // Remove unused admin promotion functions
         async function confirmDelete() {
             if (!selectedUserId) return;
             
@@ -692,69 +675,9 @@
                 closeModal();
                 loadUsers();
                 
-                // Update stats
-                const totalUsers = document.getElementById('total-users');
-                totalUsers.textContent = (parseInt(totalUsers.textContent) - 1).toString();
-                
             } catch (error) {
                 console.error('Delete user error:', error);
                 alert(`Error deleting user: ${error.message}`);
-            }
-        }
-        
-        async function promoteToAdmin(userId) {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`/api/admin/users/${userId}/promote`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to promote user');
-                }
-                
-                // Reload users to reflect changes
-                loadUsers();
-                
-                // Update admin count
-                const totalAdmins = document.getElementById('total-admins');
-                totalAdmins.textContent = (parseInt(totalAdmins.textContent) + 1).toString();
-                
-            } catch (error) {
-                console.error('Promote user error:', error);
-                alert(`Error promoting user: ${error.message}`);
-            }
-        }
-        
-        async function revokeAdmin(userId) {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`/api/admin/users/${userId}/revoke`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to revoke admin privileges');
-                }
-                
-                // Reload users to reflect changes
-                loadUsers();
-                
-                // Update admin count
-                const totalAdmins = document.getElementById('total-admins');
-                totalAdmins.textContent = (parseInt(totalAdmins.textContent) - 1).toString();
-                
-            } catch (error) {
-                console.error('Revoke admin error:', error);
-                alert(`Error revoking admin privileges: ${error.message}`);
             }
         }
         
