@@ -1,12 +1,9 @@
-/* Dashboard styles */
-
 body {
     background-color: #f5f7fa;
     color: var(--dark);
     line-height: 1.6;
 }
 
-/* Header styles */
 header {
     background-color: white;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -50,7 +47,6 @@ header {
     color: white;
 }
 
-/* Main content */
 .container {
     max-width: 1200px;
     margin: 2rem auto;
@@ -108,7 +104,6 @@ header {
     padding: 1rem;
 }
 
-/* Form styles */
 .form-group {
     margin-bottom: 1rem;
 }
@@ -150,7 +145,6 @@ button:hover {
     background-color: var(--primary-dark);
 }
 
-/* Transaction list */
 .transaction-list {
     max-height: 350px;
     overflow-y: auto;
@@ -295,7 +289,6 @@ button:hover {
     font-weight: 600;
 }
 
-/* Chart styles */
 .chart-container {
     height: 250px;
     position: relative;
@@ -321,7 +314,6 @@ button:hover {
     color: #888;
 }
 
-/* Total section */
 .total-section {
     background-color: var(--light);
     padding: 1rem;
@@ -331,7 +323,6 @@ button:hover {
     justify-content: space-between;
 }
 
-/* Type selection buttons */
 .type-selector {
     display: flex;
     gap: 1rem;
@@ -370,7 +361,6 @@ button:hover {
     color: white;
 }
 
-/* Date divider */
 .date-divider {
     background-color: var(--light);
     padding: 0.5rem 1rem;
@@ -385,7 +375,6 @@ button:hover {
     font-size: 0.875rem;
 }
 
-/* Modals */
 .modal {
     display: none;
     position: fixed;
@@ -422,7 +411,6 @@ button:hover {
     color: var(--dark);
 }
 
-/* Filter panel */
 .filter-panel {
     background-color: var(--light);
     padding: 1rem;
@@ -456,7 +444,6 @@ button:hover {
     margin-top: 1rem;
 }
 
-/* Toggle Filter Button */
 .filter-toggle {
     background-color: var(--light);
     border: 1px solid var(--border);
@@ -474,7 +461,6 @@ button:hover {
     background-color: var(--border);
 }
 
-/* Amount range */
 .range-inputs {
     display: flex;
     gap: 0.5rem;
@@ -485,7 +471,6 @@ button:hover {
     flex: 1;
 }
 
-/* Checkbox style */
 .checkbox-group {
     display: flex;
     gap: 1rem;
@@ -501,7 +486,6 @@ button:hover {
     width: auto;
 }
 
-/* Chart controls */
 .chart-controls {
     display: flex;
     justify-content: space-between;
@@ -553,7 +537,6 @@ button:hover {
     animation: fadeIn 0.3s ease;
 }
 
-/* Empty state */
 .empty-state {
     padding: 2rem;
     text-align: center;

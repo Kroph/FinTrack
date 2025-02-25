@@ -1,5 +1,3 @@
-/* Styles for authentication pages (login, signup, verify) */
-
 body {
     background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
     min-height: 100vh;
@@ -139,7 +137,6 @@ body {
     text-decoration: underline;
 }
 
-/* Verification specific styles */
 .verification-text {
     text-align: center;
     margin-bottom: 1.5rem;

@@ -1,7 +1,7 @@
 :root {
-    --primary: #4361ee;
-    --primary-dark: #3a56d4;
-    --secondary: #7209b7;
+    --primary: #FFE150;
+    --primary-dark: #F5BD1F;
+    --secondary: #722E9A;
     --light: #f8f9fa;
     --dark: #212529;
     --success: #2ecc71;
@@ -20,7 +20,6 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Animation keyframes */
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
@@ -36,7 +35,6 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Utility classes */
 .loader {
     display: inline-block;
     width: 1.2rem;
