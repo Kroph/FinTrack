@@ -977,7 +977,6 @@
                     
                 } catch (error) {
                     console.error('Error saving transaction:', error);
-                    alert(`Failed to save transaction: ${error.message}`);
                 } finally {
                     // Reset button state
                     submitButton.disabled = false;
@@ -1038,7 +1037,6 @@
                     window.dispatchEvent(new Event('transactionsUpdated'));
                 } catch (error) {
                     console.error('Error updating transaction:', error);
-                    alert('Failed to update transaction. Please try again.');
                 }
             });
         });
@@ -1397,7 +1395,6 @@
                 window.dispatchEvent(new Event('transactionsUpdated'));
             } catch (error) {
                 console.error('Error deleting transaction:', error);
-                alert('Failed to delete transaction. Please try again.');
             }
         }
         
