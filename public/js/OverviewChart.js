@@ -3,7 +3,6 @@ const overviewCharts = {
   // Initialize the charts
   init: function() {
     this.chartContainer = document.getElementById('chart-container');
-    this.chartCanvas = document.getElementById('chart-canvas');
     this.dataTypeButtons = document.querySelectorAll('.data-type-btn');
     this.chartTypeButtons = document.querySelectorAll('.chart-type-btn');
     
@@ -19,7 +18,11 @@ const overviewCharts = {
     };
     
     this.setupEventListeners();
-    this.renderChart();
+    
+    // Only render chart if transactions exist
+    if (window.transactions && window.transactions.length > 0) {
+      this.renderChart();
+    }
   },
   
   // Setup event listeners for buttons
@@ -47,6 +50,11 @@ const overviewCharts = {
   
   // Process data for chart
   processChartData: function() {
+    // Safety check: ensure transactions exist
+    if (!window.transactions || window.transactions.length === 0) {
+      return null;
+    }
+    
     // Filter transactions by type (income or expense)
     const filteredTransactions = window.transactions.filter(t => t.type === this.currentDataType);
     
@@ -118,6 +126,9 @@ const overviewCharts = {
   
   // Render the chart
   renderChart: function() {
+    console.log('Rendering chart...');
+    console.log('Transactions:', window.transactions ? window.transactions.length : 0);
+    
     const chartData = this.processChartData();
     
     if (this.chart) {
@@ -127,8 +138,8 @@ const overviewCharts = {
     if (!chartData) {
       this.chartContainer.innerHTML = `
         <div class="chart-placeholder">
-          <i class="fas fa-chart-line" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
-          <p>No ${this.currentDataType} data available</p>
+          <i class="fas fa-chart-line" style="font-size: 2rem; margin-bottom: 0.5rem; color: #ccc;"></i>
+          <p style="color: #888;">No ${this.currentDataType} data available</p>
         </div>
       `;
       return;
@@ -187,23 +198,45 @@ const overviewCharts = {
         }
       });
     }
+    
+    console.log('Chart rendered successfully');
   },
   
-  // Update chart when transactions change
   update: function() {
+    console.log('Updating chart');
     this.renderChart();
   }
 };
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-  // Make sure Chart.js is loaded before initializing
-  if (typeof Chart !== 'undefined' && window.transactions) {
-    overviewCharts.init();
-    
-    // Listen for transaction updates
-    window.addEventListener('transactionsUpdated', function() {
-      overviewCharts.update();
-    });
-  }
+  console.log('DOM ready for charts');
+  
+  // Initialize the chart after a short delay to ensure transactions are loaded
+  setTimeout(() => {
+    if (typeof Chart !== 'undefined') {
+      console.log('Chart.js is loaded');
+      
+      // Check if transactions are loaded
+      if (!window.transactions) {
+        console.log('No transactions found, waiting for load');
+        // Charts will be initialized after transactions are loaded via the event listener
+      } else {
+        console.log('Transactions found, initializing charts');
+        overviewCharts.init();
+      }
+      
+      // Listen for transaction updates
+      window.addEventListener('transactionsUpdated', function() {
+        console.log('Transaction update detected');
+        if (!overviewCharts.chart) {
+          overviewCharts.init();
+        } else {
+          overviewCharts.update();
+        }
+      });
+    } else {
+      console.error('Chart.js library not loaded!');
+    }
+  }, 500); // Short delay to ensure transactions have loaded
 });
