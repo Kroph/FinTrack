@@ -451,9 +451,8 @@
     </div>
 
     <script>
-        // Store the currently selected user for deletion
         let selectedUserId = null;
-        
+
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('Admin dashboard initializing...');
             
@@ -468,13 +467,13 @@
                 console.log('Not authorized as admin');
             }
         });
-        
+
         async function checkAuth() {
             const token = localStorage.getItem('token');
             
             if (!token) {
                 window.location.href = '/login.html';
-                return;
+                return false;
             }
             
             try {
@@ -489,10 +488,7 @@
                     throw new Error('Authentication failed');
                 }
                 
-                const userData = await response.json();
-                
                 // Now check if user is admin by directly fetching admin data
-                // If this succeeds, they're an admin. If it fails with 403, they're not
                 const adminCheckResponse = await fetch('/api/admin/users', {
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -518,7 +514,7 @@
                 return false;
             }
         }
-        
+
         async function loadUsers() {
             const token = localStorage.getItem('token');
             const userList = document.getElementById('userList');
@@ -557,7 +553,33 @@
                         '<span class="user-role role-admin">Admin</span>' : 
                         '<span class="user-role role-user">User</span>';
                     
-                    // Admin role without promotion options
+                    // Format created date
+                    const createdDate = new Date(user.created_at).toLocaleDateString();
+                    
+                    // Admin actions based on user role
+                    let actionButtons = `
+                        <button class="action-btn delete-btn" onclick="showDeleteModal(${user.id})">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    `;
+                    
+                    // Add promote/revoke buttons based on admin status
+                    if (user.is_admin) {
+                        actionButtons = `
+                            <button class="action-btn revoke-btn" onclick="revokeAdmin(${user.id})">
+                                <i class="fas fa-user-minus"></i> Revoke Admin
+                            </button>
+                            ${actionButtons}
+                        `;
+                    } else {
+                        actionButtons = `
+                            <button class="action-btn promote-btn" onclick="promoteToAdmin(${user.id})">
+                                <i class="fas fa-user-plus"></i> Make Admin
+                            </button>
+                            ${actionButtons}
+                        `;
+                    }
+                    
                     userCard.innerHTML = `
                         <div class="user-info">
                             <div class="user-name">${user.username}</div>
@@ -566,9 +588,7 @@
                             <div class="user-date">Joined: ${createdDate}</div>
                         </div>
                         <div class="user-actions">
-                            <button class="action-btn delete-btn" onclick="showDeleteModal(${user.id})">
-                                <i class="fas fa-trash"></i> Delete
-                            </button>
+                            ${actionButtons}
                         </div>
                     `;
                     
@@ -586,9 +606,7 @@
                 `;
             }
         }
-        
-        // Remove loadStats function
-        
+
         function searchUsers() {
             const searchTerm = document.getElementById('searchInput').value.trim();
             const token = localStorage.getItem('token');
@@ -644,6 +662,30 @@
                     
                     const createdDate = new Date(user.created_at).toLocaleDateString();
                     
+                    // Admin actions based on user role
+                    let actionButtons = `
+                        <button class="action-btn delete-btn" onclick="showDeleteModal(${user.id})">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    `;
+                    
+                    // Add promote/revoke buttons based on admin status
+                    if (user.is_admin) {
+                        actionButtons = `
+                            <button class="action-btn revoke-btn" onclick="revokeAdmin(${user.id})">
+                                <i class="fas fa-user-minus"></i> Revoke Admin
+                            </button>
+                            ${actionButtons}
+                        `;
+                    } else {
+                        actionButtons = `
+                            <button class="action-btn promote-btn" onclick="promoteToAdmin(${user.id})">
+                                <i class="fas fa-user-plus"></i> Make Admin
+                            </button>
+                            ${actionButtons}
+                        `;
+                    }
+                    
                     userCard.innerHTML = `
                         <div class="user-info">
                             <div class="user-name">${user.username}</div>
@@ -652,9 +694,7 @@
                             <div class="user-date">Joined: ${createdDate}</div>
                         </div>
                         <div class="user-actions">
-                            <button class="action-btn delete-btn" onclick="showDeleteModal(${user.id})">
-                                <i class="fas fa-trash"></i> Delete
-                            </button>
+                            ${actionButtons}
                         </div>
                     `;
                     
@@ -672,17 +712,65 @@
                 `;
             });
         }
-        
+
         function showDeleteModal(userId) {
             selectedUserId = userId;
             document.getElementById('confirmModal').style.display = 'block';
         }
-        
+
         function closeModal() {
             document.getElementById('confirmModal').style.display = 'none';
         }
-        
-        // Remove unused admin promotion functions
+
+        // Add missing admin promotion functions
+        async function promoteToAdmin(userId) {
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`/api/admin/users/${userId}/promote`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to promote user to admin');
+                }
+                
+                // Reload users to reflect changes
+                loadUsers();
+                
+            } catch (error) {
+                console.error('Promote admin error:', error);
+                alert(`Error promoting user: ${error.message}`);
+            }
+        }
+
+        async function revokeAdmin(userId) {
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`/api/admin/users/${userId}/revoke`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to revoke admin privileges');
+                }
+                
+                // Reload users to reflect changes
+                loadUsers();
+                
+            } catch (error) {
+                console.error('Revoke admin error:', error);
+                alert(`Error revoking admin privileges: ${error.message}`);
+            }
+        }
+
         async function confirmDelete() {
             if (!selectedUserId) return;
             
@@ -709,7 +797,7 @@
                 alert(`Error deleting user: ${error.message}`);
             }
         }
-        
+
         function logout() {
             const token = localStorage.getItem('token');
             

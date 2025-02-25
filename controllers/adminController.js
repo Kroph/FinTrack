@@ -70,60 +70,57 @@ const adminController = {
 
     deleteUser: async (req, res) => {
         const { id } = req.params;
-
+    
         try {
             // Check if the requesting user is an admin
             const adminCheck = await pool.query(
                 'SELECT is_admin FROM users WHERE id = $1',
                 [req.user.userId]
             );
-
+    
             if (!adminCheck.rows[0]?.is_admin) {
                 return res.status(403).json({
                     success: false,
                     error: 'Access denied: Admin privileges required'
                 });
             }
-
+    
             // Check if trying to delete an admin user
             const userCheck = await pool.query(
                 'SELECT is_admin FROM users WHERE id = $1',
                 [id]
             );
-
+    
             if (userCheck.rows[0]?.is_admin) {
                 return res.status(403).json({
                     success: false,
                     error: 'Cannot delete admin users'
                 });
             }
-
+    
             await pool.query('BEGIN');
-
+    
             // Delete user's sessions
             await pool.query('DELETE FROM user_sessions WHERE sess->>\'userId\' = $1', [id]);
             
             // Delete user's tokens
             await pool.query('DELETE FROM user_tokens WHERE user_id = $1', [id]);
             
-            // Delete user's expenses
-            await pool.query('DELETE FROM expenses WHERE user_id = $1', [id]);
-            
-            // Delete user's income records
-            await pool.query('DELETE FROM income WHERE user_id = $1', [id]);
+            // Delete user's transactions - fixed from expenses/income to transactions
+            await pool.query('DELETE FROM transactions WHERE user_id = $1', [id]);
             
             // Finally, delete the user
             const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING *', [id]);
-
+    
             await pool.query('COMMIT');
-
+    
             if (result.rowCount === 0) {
                 return res.status(404).json({ 
                     success: false, 
                     error: 'User not found' 
                 });
             }
-
+    
             res.json({
                 success: true,
                 message: 'User deleted successfully'
