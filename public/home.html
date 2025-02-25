@@ -4,60 +4,1183 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FinTrack</title>
-    <link rel="stylesheet" href="./css/home.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --text-light: #6c757d;
+            --border: #dee2e6;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        /* Header styles */
+        header {
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .top {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .top h1 {
+            color: var(--primary);
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        
+        .user {
+            font-weight: 500;
+            color: var(--dark);
+        }
+        
+        .logout-btn {
+            background-color: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .logout-btn:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        /* Main content */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background-color: var(--primary);
+            color: white;
+            padding: 1rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-header button {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+        
+        .card-header button:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
+        
+        /* Form styles */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+        
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        button:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        /* Transaction list */
+        .transaction-list {
+            max-height: 350px;
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+        
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            transition: var(--transition);
+        }
+        
+        .transaction-item:hover {
+            background-color: var(--light);
+        }
+        
+        .transaction-details {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex: 1;
+        }
+        
+        .transaction-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: white;
+        }
+        
+        .icon-income {
+            background-color: var(--success);
+        }
+        
+        .icon-expense {
+            background-color: var(--danger);
+        }
+        
+        .transaction-info {
+            flex: 1;
+        }
+        
+        .transaction-description {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+        
+        .transaction-category {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            background-color: var(--light);
+            padding: 0.1rem 0.5rem;
+            border-radius: 12px;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+        
+        .transaction-date {
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+        
+        .transaction-amount {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        .amount-income {
+            color: var(--success);
+        }
+        
+        .amount-expense {
+            color: var(--danger);
+        }
+        
+        .transaction-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn-edit, .btn-delete {
+            padding: 0.5rem;
+            border-radius: 4px;
+            background-color: transparent;
+            border: none;
+            color: var(--text-light);
+            transition: var(--transition);
+        }
+        
+        .btn-edit:hover {
+            color: var(--primary);
+        }
+        
+        .btn-delete:hover {
+            color: var(--danger);
+        }
+        
+        .balance-card {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 2rem;
+        }
+        
+        .balance-title {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+        
+        .balance-amount {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        
+        .balance-details {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+        
+        .balance-item {
+            flex: 1;
+        }
+        
+        .balance-label {
+            font-size: 0.875rem;
+            opacity: 0.9;
+            margin-bottom: 0.25rem;
+        }
+        
+        .balance-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        /* Chart styles */
+        .chart-container {
+            height: 200px;
+            margin-top: 0.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px dashed var(--border);
+            border-radius: 4px;
+        }
+        
+        .chart-placeholder {
+            color: var(--text-light);
+            text-align: center;
+        }
+
+        /* Total section */
+        .total-section {
+            background-color: var(--light);
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        /* Type selection buttons */
+        .type-selector {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .type-btn {
+            flex: 1;
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .income-btn {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+        
+        .income-btn.active {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .expense-btn {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+        
+        .expense-btn.active {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        /* Date divider */
+        .date-divider {
+            background-color: var(--light);
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-light);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .date-divider .date-total {
+            font-size: 0.875rem;
+        }
+        
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
+        .modal-content {
+            position: relative;
+            background-color: white;
+            margin: 10% auto;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+        
+        .close-modal:hover {
+            color: var(--dark);
+        }
+        
+        /* Filter panel */
+        .filter-panel {
+            background-color: var(--light);
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .filter-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .filter-group {
+            flex: 1;
+        }
+        
+        .filter-group label {
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .filter-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        /* Toggle Filter Button */
+        .filter-toggle {
+            background-color: var(--light);
+            border: 1px solid var(--border);
+            color: var(--text-light);
+            padding: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .filter-toggle:hover {
+            background-color: var(--border);
+        }
+        
+        /* Amount range */
+        .range-inputs {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .range-inputs input {
+            flex: 1;
+        }
+        
+        /* Checkbox style */
+        .checkbox-group {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .checkbox-item input {
+            width: auto;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 576px) {
+            .top {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+            
+            .transaction-details {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .filter-row {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 <body>
     <header>
         <div class="top">
-            <div>
-                <h2 class="user"> Hello, {user}</h2>
-            </div>
-            <div>
-                <h1>FinTrack</h1>
-            </div>
-            <button onclick="logout()">Logout</button>
+            <h2 class="user">Hello, <span id="username">User</span></h2>
+            <h1>FinTrack</h1>
+            <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
     </header>
 
-    <div class="middle">
-        <div class="left-panel">
-            <h2 id="form-title">Add Transaction</h2>
-            <form id="transaction-form">
-                <label for="type">Type:</label><br>
-                <select id="type" required>
-                    <option value="expense">Expense</option>
-                    <option value="income">Income</option>
-                </select><br><br>
+    <div class="container">
+        <div class="left-column">
+            <div class="balance-card">
+                <div class="balance-title">Current Balance</div>
+                <div class="balance-amount" id="total-balance">$0.00</div>
+                <div class="balance-details">
+                    <div class="balance-item">
+                        <div class="balance-label">Income</div>
+                        <div class="balance-value" id="total-income">$0.00</div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="balance-label">Expenses</div>
+                        <div class="balance-value" id="total-expenses">$0.00</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <span>Add Transaction</span>
+                </div>
+                <div class="card-body">
+                    <!-- Type selection buttons -->
+                    <div class="type-selector">
+                        <div class="type-btn income-btn active" id="income-btn" onclick="selectTransactionType('income')">
+                            <i class="fas fa-plus-circle"></i> Income
+                        </div>
+                        <div class="type-btn expense-btn" id="expense-btn" onclick="selectTransactionType('expense')">
+                            <i class="fas fa-minus-circle"></i> Expense
+                        </div>
+                    </div>
 
-                <label for="amount">Amount:</label><br>
-                <input type="number" id="amount" step="0.01" required><br><br>
-
-                <label for="description">Description:</label><br>
-                <input type="text" id="description" required><br><br>
-
-                <label for="date">Date:</label><br>
-                <input type="date" id="date"><br><br>
-
-                <button type="submit">Add</button>
-            </form>
-
-            <h3>Transactions</h3>
-            <div class="transaction-list" id="transaction-list">
+                    <form id="transaction-form">
+                        <input type="hidden" id="transaction-type" value="income">
+                        <div class="form-group">
+                            <label for="amount">Amount</label>
+                            <input type="number" id="amount" min="0.01" step="0.01" placeholder="0.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <select id="category" required>
+                                <!-- Categories will be populated by JavaScript based on selected type -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <input type="text" id="description" placeholder="What was this for?" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="date">Date</label>
+                            <input type="date" id="date">
+                        </div>
+                        <button type="submit">Add Transaction</button>
+                    </form>
+                </div>
             </div>
         </div>
-
-        <div class="right-panel">
-            <h2>Visualizations</h2>
-            <div class="chart">
+        
+        <div class="right-column">
+            <div class="card">
+                <div class="card-header">Overview</div>
+                <div class="card-body">
+                    <div class="chart-container" style="height: 200px;">
+                        <div class="chart-placeholder">
+                            <i class="fas fa-chart-line" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                            <p>Your financial insights will appear here</p>
+                        </div>
+                    </div>
+                </div>
             </div>
+            
+            <div class="card" style="margin-top: 1rem;">
+                <div class="card-header">
+                    <span>Recent Transactions</span>
+                    <button id="filter-toggle-btn" onclick="toggleFilterPanel()">
+                        <i class="fas fa-filter"></i> Filter & Sort
+                    </button>
+                </div>
+                <div class="card-body">
+                    <!-- Filter panel - hidden by default -->
+                    <div id="filter-panel" class="filter-panel" style="display: none;">
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label>Transaction Type</label>
+                                <div class="checkbox-group">
+                                    <div class="checkbox-item">
+                                        <input type="checkbox" id="filter-income" checked>
+                                        <label for="filter-income">Income</label>
+                                    </div>
+                                    <div class="checkbox-item">
+                                        <input type="checkbox" id="filter-expense" checked>
+                                        <label for="filter-expense">Expense</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label for="filter-date-from">Date Range</label>
+                                <input type="date" id="filter-date-from" placeholder="From">
+                            </div>
+                            <div class="filter-group">
+                                <label for="filter-date-to">To</label>
+                                <input type="date" id="filter-date-to" placeholder="To">
+                            </div>
+                        </div>
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label>Amount Range</label>
+                                <div class="range-inputs">
+                                    <input type="number" id="filter-amount-min" placeholder="Min" min="0" step="0.01">
+                                    <span>to</span>
+                                    <input type="number" id="filter-amount-max" placeholder="Max" min="0" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label for="sort-by">Sort By</label>
+                                <select id="sort-by">
+                                    <option value="date-desc">Date (Newest First)</option>
+                                    <option value="date-asc">Date (Oldest First)</option>
+                                    <option value="amount-desc">Amount (Highest First)</option>
+                                    <option value="amount-asc">Amount (Lowest First)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="filter-actions">
+                            <button class="filter-toggle" onclick="resetFilters()">Reset</button>
+                            <button onclick="applyFilters()">Apply Filters</button>
+                        </div>
+                    </div>
+
+                    <div class="transaction-list" id="transaction-list">
+                        <!-- Transactions will be populated here via JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
+
         </div>
     </div>
 
-    <footer>
-        <div class="bottom" id="footer">
+    <!-- Modal for editing transactions -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="close-modal" onclick="closeEditModal()">&times;</div>
+            <h2 style="margin-bottom: 1.5rem;">Edit Transaction</h2>
+            <form id="edit-form">
+                <div class="type-selector">
+                    <div class="type-btn income-btn" id="edit-income-btn" onclick="selectEditType('income')">
+                        <i class="fas fa-plus-circle"></i> Income
+                    </div>
+                    <div class="type-btn expense-btn" id="edit-expense-btn" onclick="selectEditType('expense')">
+                        <i class="fas fa-minus-circle"></i> Expense
+                    </div>
+                </div>
+                <input type="hidden" id="edit-type" value="income">
+                <div class="form-group">
+                    <label for="edit-amount">Amount</label>
+                    <input type="number" id="edit-amount" min="0.01" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-category">Category</label>
+                    <select id="edit-category" required>
+                        <!-- Categories will be populated by JavaScript -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-description">Description</label>
+                    <input type="text" id="edit-description" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-date">Date</label>
+                    <input type="date" id="edit-date">
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" onclick="closeEditModal()" style="background-color: var(--text-light);">Cancel</button>
+                    <button type="submit">Save Changes</button>
+                </div>
+            </form>
         </div>
-    </footer>   
+    </div>
 
-    <script src="js/transactions.js"></script>
+    <script>
+        // Categories from backend
+        let categories = {
+            income: ['Salary', 'Gift', 'Fund'],
+            expense: ['Food', 'Apartment', 'Transportation']
+        };
+        
+        // Real transactions from API
+        let transactions = [];
+        
+        // Filter and sort state
+        let filters = {
+            types: ['income', 'expense'],
+            dateFrom: null,
+            dateTo: null,
+            amountMin: null,
+            amountMax: null,
+            sortBy: 'date-desc'
+        };
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check authentication
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            // Set default date to today
+            document.getElementById('date').valueAsDate = new Date();
+            
+            try {
+                // Get user data
+                const userResponse = await fetch('/api/auth/user', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!userResponse.ok) {
+                    throw new Error('Authentication failed');
+                }
+                
+                const userData = await userResponse.json();
+                document.getElementById('username').textContent = userData.user.username;
+                
+                // Get categories
+                const categoriesResponse = await fetch('/api/transactions/categories', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (categoriesResponse.ok) {
+                    const categoriesData = await categoriesResponse.json();
+                    categories = categoriesData.categories;
+                }
+                
+                // Populate category dropdown based on default type
+                populateCategories();
+                
+                // Fetch transactions
+                await fetchTransactions();
+                
+            } catch (error) {
+                console.error('Initialization error:', error);
+                if (error.message === 'Authentication failed') {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login.html';
+                }
+            }
+            
+            // Form submission
+            document.getElementById('transaction-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const type = document.getElementById('transaction-type').value;
+                const category = document.getElementById('category').value;
+                const amount = parseFloat(document.getElementById('amount').value);
+                const description = document.getElementById('description').value;
+                const date = document.getElementById('date').value;
+                
+                try {
+                    const token = localStorage.getItem('token');
+                    const response = await fetch('/api/transactions', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            type,
+                            category,
+                            amount,
+                            description,
+                            date
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error || 'Failed to add transaction');
+                    }
+                    
+                    // Clear form
+                    e.target.reset();
+                    document.getElementById('date').valueAsDate = new Date();
+                    populateCategories(); // Reset categories dropdown
+                    
+                    // Refresh transactions
+                    await fetchTransactions();
+                    
+                } catch (error) {
+                    console.error('Error adding transaction:', error);
+                    alert(`Error: ${error.message}`);
+                }
+            });
+            
+            // Edit form submission
+            document.getElementById('edit-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const transactionId = parseInt(document.getElementById('edit-form').dataset.id);
+                const type = document.getElementById('edit-type').value;
+                const category = document.getElementById('edit-category').value;
+                const amount = parseFloat(document.getElementById('edit-amount').value);
+                const description = document.getElementById('edit-description').value;
+                const date = document.getElementById('edit-date').value;
+                
+                try {
+                    const token = localStorage.getItem('token');
+                    const response = await fetch(`/api/transactions/${transactionId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            type,
+                            category,
+                            amount,
+                            description,
+                            date
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error || 'Failed to update transaction');
+                    }
+                    
+                    // Close modal and refresh transactions
+                    closeEditModal();
+                    await fetchTransactions();
+                    
+                } catch (error) {
+                    console.error('Error updating transaction:', error);
+                    alert(`Error: ${error.message}`);
+                }
+            });
+        });
+        
+        function populateCategories(type = 'income') {
+            const categorySelect = document.getElementById('category');
+            categorySelect.innerHTML = '';
+            
+            categories[type].forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                categorySelect.appendChild(option);
+            });
+        }
+        
+        function populateEditCategories(type) {
+            const categorySelect = document.getElementById('edit-category');
+            categorySelect.innerHTML = '';
+            
+            categories[type].forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                categorySelect.appendChild(option);
+            });
+        }
+        
+        function selectTransactionType(type) {
+            document.getElementById('transaction-type').value = type;
+            
+            if (type === 'income') {
+                document.getElementById('income-btn').classList.add('active');
+                document.getElementById('expense-btn').classList.remove('active');
+            } else {
+                document.getElementById('income-btn').classList.remove('active');
+                document.getElementById('expense-btn').classList.add('active');
+            }
+            
+            populateCategories(type);
+        }
+        
+        function selectEditType(type) {
+            document.getElementById('edit-type').value = type;
+            
+            if (type === 'income') {
+                document.getElementById('edit-income-btn').classList.add('active');
+                document.getElementById('edit-expense-btn').classList.remove('active');
+            } else {
+                document.getElementById('edit-income-btn').classList.remove('active');
+                document.getElementById('edit-expense-btn').classList.add('active');
+            }
+            
+            populateEditCategories(type);
+        }
+        
+        function toggleFilterPanel() {
+            const panel = document.getElementById('filter-panel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function applyFilters() {
+            // Update filters object
+            filters.types = [];
+            if (document.getElementById('filter-income').checked) {
+                filters.types.push('income');
+            }
+            if (document.getElementById('filter-expense').checked) {
+                filters.types.push('expense');
+            }
+            
+            const dateFrom = document.getElementById('filter-date-from').value;
+            const dateTo = document.getElementById('filter-date-to').value;
+            const amountMin = document.getElementById('filter-amount-min').value;
+            const amountMax = document.getElementById('filter-amount-max').value;
+            
+            filters.dateFrom = dateFrom ? new Date(dateFrom) : null;
+            filters.dateTo = dateTo ? new Date(dateTo) : null;
+            filters.amountMin = amountMin ? parseFloat(amountMin) : null;
+            filters.amountMax = amountMax ? parseFloat(amountMax) : null;
+            filters.sortBy = document.getElementById('sort-by').value;
+            
+            // Re-render transactions with filters
+            renderTransactions();
+            
+            // Hide filter panel
+            toggleFilterPanel();
+        }
+        
+        function resetFilters() {
+            document.getElementById('filter-income').checked = true;
+            document.getElementById('filter-expense').checked = true;
+            document.getElementById('filter-date-from').value = '';
+            document.getElementById('filter-date-to').value = '';
+            document.getElementById('filter-amount-min').value = '';
+            document.getElementById('filter-amount-max').value = '';
+            document.getElementById('sort-by').value = 'date-desc';
+            
+            filters = {
+                types: ['income', 'expense'],
+                dateFrom: null,
+                dateTo: null,
+                amountMin: null,
+                amountMax: null,
+                sortBy: 'date-desc'
+            };
+            
+            renderTransactions();
+        }
+        
+        async function fetchTransactions() {
+            try {
+                const token = localStorage.getItem('token');
+                
+                // Build query parameters based on current filters
+                let queryParams = new URLSearchParams();
+                
+                if (filters.types.length === 1) {
+                    queryParams.append('type', filters.types[0]);
+                }
+                
+                if (filters.dateFrom) {
+                    queryParams.append('dateFrom', filters.dateFrom.toISOString().split('T')[0]);
+                }
+                
+                if (filters.dateTo) {
+                    queryParams.append('dateTo', filters.dateTo.toISOString().split('T')[0]);
+                }
+                
+                // Make API request
+                const response = await fetch(`/api/transactions?${queryParams.toString()}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch transactions');
+                }
+                
+                const data = await response.json();
+                transactions = data.transactions;
+                
+                // Render transactions and update totals
+                renderTransactions();
+                updateBalanceSummary();
+                
+            } catch (error) {
+                console.error('Error fetching transactions:', error);
+            }
+        }
+        
+        function calculateDateTotal(transactions) {
+            let total = 0;
+            transactions.forEach(transaction => {
+                if (transaction.type === 'income') {
+                    total += transaction.amount;
+                } else {
+                    total -= transaction.amount;
+                }
+            });
+            return total;
+        }
+        
+        function formatDateHeader(dateString) {
+            const date = new Date(dateString);
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            if (date.toDateString() === today.toDateString()) {
+                return 'Today';
+            } else if (date.toDateString() === yesterday.toDateString()) {
+                return 'Yesterday';
+            } else {
+                return formatDate(dateString);
+            }
+        }
+        
+        function updateBalanceSummary() {
+            const totalIncome = transactions
+                .filter(t => t.type === 'income')
+                .reduce((sum, t) => sum + t.amount, 0);
+                
+            const totalExpenses = transactions
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + t.amount, 0);
+                
+            const balance = totalIncome - totalExpenses;
+            
+            document.getElementById('total-income').textContent = formatCurrency(totalIncome);
+            document.getElementById('total-expenses').textContent = formatCurrency(totalExpenses);
+            
+            // Show balance with appropriate color for gains/losses
+            const balanceElement = document.getElementById('total-balance');
+            balanceElement.textContent = formatCurrency(Math.abs(balance));
+            
+            if (balance < 0) {
+                balanceElement.textContent = "-" + balanceElement.textContent;
+                balanceElement.style.color = "#ffcccc"; // Light red for negative balance
+            } else {
+                balanceElement.style.color = "white"; // Reset to default color for positive
+            }
+        }
+        
+        function calculateBalance() {
+            return transactions.reduce((balance, transaction) => {
+                return transaction.type === 'income' 
+                    ? balance + transaction.amount 
+                    : balance - transaction.amount;
+            }, 0);
+        }
+        
+        function formatCurrency(amount) {
+            return `$${amount.toFixed(2)}`;
+        }
+        
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString(undefined, options);
+        }
+        
+        async function editTransaction(id) {
+            const transaction = transactions.find(t => t.id === id);
+            
+            if (transaction) {
+                // Set transaction type
+                selectEditType(transaction.type);
+                
+                // Populate form fields
+                document.getElementById('edit-amount').value = transaction.amount;
+                document.getElementById('edit-description').value = transaction.description;
+                document.getElementById('edit-date').value = transaction.date;
+                
+                // Set transaction ID on form
+                document.getElementById('edit-form').dataset.id = id;
+                
+                // Fill categories dropdown and select the right one
+                populateEditCategories(transaction.type);
+                
+                if (transaction.category) {
+                    document.getElementById('edit-category').value = transaction.category;
+                }
+                
+                // Show modal
+                document.getElementById('editModal').style.display = 'block';
+            }
+        }
+        
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+        
+        async function deleteTransaction(id) {
+            if (confirm('Are you sure you want to delete this transaction?')) {
+                try {
+                    const token = localStorage.getItem('token');
+                    const response = await fetch(`/api/transactions/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error || 'Failed to delete transaction');
+                    }
+                    
+                    // Refresh transactions
+                    await fetchTransactions();
+                    
+                } catch (error) {
+                    console.error('Error deleting transaction:', error);
+                    alert(`Error: ${error.message}`);
+                }
+            }
+        }
+        
+        async function logout() {
+            const token = localStorage.getItem('token');
+            
+            try {
+                await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            } finally {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/login.html';
+            }
+        }
+    </script>
 </body>
 </html>

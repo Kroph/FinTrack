@@ -5,7 +5,7 @@ const { pool } = require('../config/database');
 
 router.post('/', requireAuth, async (req, res) => {
     try {
-        const { amount, description, date, type } = req.body;
+        const { amount, description, date, type, category } = req.body;
         const userId = req.user.userId;
 
         if (!['income', 'expense'].includes(type)) {
@@ -16,8 +16,8 @@ router.post('/', requireAuth, async (req, res) => {
         }
 
         const result = await pool.query(
-            'INSERT INTO transactions (user_id, amount, description, date, type) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [userId, amount, description, date, type]
+            'INSERT INTO transactions (user_id, amount, description, date, type, category) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [userId, amount, description, date, type, category]
         );
 
         res.json({ success: true, transaction: result.rows[0] });
@@ -30,13 +30,22 @@ router.get('/', requireAuth, async (req, res) => {
     try {
         const userId = req.user.userId;
         const type = req.query.type;
+        const category = req.query.category;
 
         let query = 'SELECT * FROM transactions WHERE user_id = $1';
         const queryParams = [userId];
+        let paramIndex = 2;
 
         if (type && ['income', 'expense'].includes(type)) {
-            query += ' AND type = $2';
+            query += ` AND type = $${paramIndex}`;
             queryParams.push(type);
+            paramIndex++;
+        }
+
+        if (category) {
+            query += ` AND category = $${paramIndex}`;
+            queryParams.push(category);
+            paramIndex++;
         }
 
         query += ' ORDER BY date DESC';
@@ -50,7 +59,7 @@ router.get('/', requireAuth, async (req, res) => {
 
 router.put('/:id', requireAuth, async (req, res) => {
     try {
-        const { amount, description, date, type } = req.body;
+        const { amount, description, date, type, category } = req.body;
         const transactionId = req.params.id;
         const userId = req.user.userId;
 
@@ -62,8 +71,8 @@ router.put('/:id', requireAuth, async (req, res) => {
         }
 
         const result = await pool.query(
-            'UPDATE transactions SET amount = $1, description = $2, date = $3, type = $4 WHERE id = $5 AND user_id = $6 RETURNING *',
-            [amount, description, date, type, transactionId, userId]
+            'UPDATE transactions SET amount = $1, description = $2, date = $3, type = $4, category = $5 WHERE id = $6 AND user_id = $7 RETURNING *',
+            [amount, description, date, type, category, transactionId, userId]
         );
 
         if (result.rows.length === 0) {
@@ -94,6 +103,19 @@ router.delete('/:id', requireAuth, async (req, res) => {
         }
 
         res.json({ success: true, message: 'Transaction deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+router.get('/categories', requireAuth, async (req, res) => {
+    try {
+        const categories = {
+            income: ['Salary', 'Gift', 'Fund'],
+            expense: ['Food', 'Apartment', 'Transportation']
+        };
+        
+        res.json({ success: true, categories });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }

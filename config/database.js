@@ -53,6 +53,7 @@ async function initDB() {
                 description TEXT,
                 date DATE NOT NULL DEFAULT CURRENT_DATE,
                 type VARCHAR(10) NOT NULL CHECK (type IN ('expense', 'income')),
+                category VARCHAR(50),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
