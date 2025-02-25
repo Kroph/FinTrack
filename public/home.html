@@ -6,7 +6,7 @@
     <title>FinTrack</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
-    <script src="./js/OverviewChart.js" defer></script>
+    <script src="./js/overviewCharts.js" defer></script>
     <style>
         :root {
             --primary: #4361ee;
@@ -769,26 +769,6 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            window.transactions = transactions;
-            
-            const container = document.getElementById('overview-chart-container');
-            if (container) {
-                ReactDOM.render(React.createElement(OverviewChart), container);
-            }
-            
-            const originalRenderTransactions = renderTransactions;
-            renderTransactions = function() {
-                originalRenderTransactions();
-                window.transactions = transactions;
-                if (container) {
-                    ReactDOM.render(React.createElement(OverviewChart), container);
-                }
-            };
-        });
-    </script>
-
-    <script>
         // Category definitions
         const categories = {
             income: ['Salary', 'Gift', 'Fund'],
@@ -813,7 +793,7 @@
             document.getElementById('date').valueAsDate = new Date();
             
             const user = JSON.parse(localStorage.getItem('user') || '{}');
-            document.getElementById('username').textContent = user.username;
+            document.getElementById('username').textContent = user.username || 'User';
             
             // Populate category dropdown based on default type
             populateCategories();
@@ -853,6 +833,9 @@
                 // Update UI
                 renderTransactions();
                 updateBalanceSummary();
+                
+                // Notify chart of transaction updates
+                window.dispatchEvent(new Event('transactionsUpdated'));
             });
             
             // Edit form submission
@@ -883,11 +866,12 @@
                     renderTransactions();
                     updateBalanceSummary();
                     closeEditModal();
+                    
+                    // Notify chart of transaction updates
+                    window.dispatchEvent(new Event('transactionsUpdated'));
                 }
             });
         });
-
-        window.dispatchEvent(new Event('transactionsUpdated'));
         
         function populateCategories(type = 'income') {
             const categorySelect = document.getElementById('category');
@@ -1166,7 +1150,7 @@
             
             if (balance < 0) {
                 balanceElement.textContent = "-" + balanceElement.textContent;
-                balanceElement.style.color = "#c1121f";
+                balanceElement.style.color = "#e74c3c";
             } else {
                 balanceElement.style.color = "white";
             }
@@ -1218,15 +1202,13 @@
         }
         
         function deleteTransaction(id) {
-            if (confirm('Are you sure you want to delete this transaction?')) {
-                transactions = transactions.filter(t => t.id !== id);
-                renderTransactions();
-                updateBalanceSummary();
-            }
+            transactions = transactions.filter(t => t.id !== id);
+            renderTransactions();
+            updateBalanceSummary();
+            window.dispatchEvent(new Event('transactionsUpdated'));
         }
         
         function logout() {
-            alert('Logging out... You will be redirected to the login page.');
             localStorage.removeItem('token');
             localStorage.removeItem('userRole');
             sessionStorage.clear();
