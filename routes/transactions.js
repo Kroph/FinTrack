@@ -7,47 +7,22 @@ router.post('/', requireAuth, async (req, res) => {
     try {
         const { amount, description, date, type, category } = req.body;
         const userId = req.user.userId;
-        
-        // Validate required fields
-        if (!amount) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Amount is required' 
-            });
-        }
-        
-        if (!type) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Transaction type is required' 
-            });
-        }
-        
+
         if (!['income', 'expense'].includes(type)) {
             return res.status(400).json({ 
                 success: false, 
-                error: 'Invalid transaction type. Must be "income" or "expense"' 
+                error: 'Invalid transaction type' 
             });
         }
-        
-        console.log('Inserting transaction with values:', {
-            userId, amount, description, date, type, category
-        });
-        
+
         const result = await pool.query(
             'INSERT INTO transactions (user_id, amount, description, date, type, category) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
             [userId, amount, description, date, type, category]
         );
-        
-        console.log('Transaction created:', result.rows[0]);
-        
+
         res.json({ success: true, transaction: result.rows[0] });
     } catch (error) {
-        console.error('Error creating transaction:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
-        });
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 

@@ -776,7 +776,7 @@
         };
         
         // Transaction data array
-        window.transactions = data.transactions || [];
+        let transactions = [];
         
         // Filter and sort state
         let filters = {
@@ -891,9 +891,6 @@
         
         // Initialize when DOM is ready
         document.addEventListener('DOMContentLoaded', async () => {
-
-            console.log('Categories available:', window.categories);
-            
             // Check authentication state first
             const isAuthenticated = await checkAuthState();
             
@@ -907,13 +904,13 @@
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             document.getElementById('username').textContent = user.username || 'User';
             
-            // Populate category dropdown based on default type
             populateCategories();
-            
-            // Load transactions from server
+
             loadTransactions();
             
-            // Form submission handler for adding new transactions
+            renderTransactions();
+            updateBalanceSummary();
+
             document.getElementById('transaction-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
@@ -923,26 +920,9 @@
                 const description = document.getElementById('description').value;
                 const date = document.getElementById('date').value;
                 
-                // Show submitting status
-                const submitButton = e.target.querySelector('button[type="submit"]');
-                const originalButtonText = submitButton.textContent;
-                submitButton.disabled = true;
-                submitButton.textContent = 'Saving...';
-                
                 try {
                     // Get token from localStorage
                     const token = localStorage.getItem('token');
-                    
-                    // Create transaction payload exactly matching server expectations
-                    const transactionData = {
-                        amount,
-                        description,
-                        date,
-                        type,
-                        category
-                    };
-                    
-                    console.log('Sending transaction data:', transactionData);
                     
                     // Send transaction to server
                     const response = await fetch('/api/transactions', {
@@ -951,17 +931,20 @@
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${token}`
                         },
-                        body: JSON.stringify(transactionData)
+                        body: JSON.stringify({
+                            type,
+                            category,
+                            amount,
+                            description,
+                            date
+                        })
                     });
                     
-                    // Log the full response for debugging
-                    console.log('Server response status:', response.status);
-                    const data = await response.json();
-                    console.log('Server response data:', data);
-                    
                     if (!response.ok) {
-                        throw new Error(data.error || 'Failed to save transaction');
+                        throw new Error('Failed to save transaction');
                     }
+                    
+                    const data = await response.json();
                     
                     // Add to local transactions array for immediate display
                     transactions.unshift(data.transaction);
@@ -980,15 +963,41 @@
                     
                 } catch (error) {
                     console.error('Error saving transaction:', error);
-                    alert(`Failed to save transaction: ${error.message}`);
-                } finally {
-                    // Reset button state
-                    submitButton.disabled = false;
-                    submitButton.textContent = originalButtonText;
+                    alert('Failed to save transaction. Please try again.');
                 }
-            });
-            
-            // Edit form submission handler
+            });  
+
+            async function loadTransactions() {
+                try {
+                    const token = localStorage.getItem('token');
+                    
+                    const response = await fetch('/api/transactions', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to load transactions');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Replace local transactions array with server data
+                    transactions = data.transactions;
+                    
+                    // Update UI
+                    renderTransactions();
+                    updateBalanceSummary();
+                    
+                    // Notify chart of transaction updates
+                    window.dispatchEvent(new Event('transactionsUpdated'));
+                    
+                } catch (error) {
+                    console.error('Error loading transactions:', error);
+                }
+            }
+
             document.getElementById('edit-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
@@ -1046,7 +1055,6 @@
             });
         });
         
-        // Category population functions
         function populateCategories(type = 'income') {
             const categorySelect = document.getElementById('category');
             categorySelect.innerHTML = '';
@@ -1071,7 +1079,6 @@
             });
         }
         
-        // Type selection functions
         function selectTransactionType(type) {
             document.getElementById('transaction-type').value = type;
             
@@ -1100,7 +1107,6 @@
             populateEditCategories(type);
         }
         
-        // Filter functions
         function toggleFilterPanel() {
             const panel = document.getElementById('filter-panel');
             panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
@@ -1154,8 +1160,7 @@
             
             renderTransactions();
         }
-        
-        // Render transactions to the UI
+
         function renderTransactions() {
             const list = document.getElementById('transaction-list');
             list.innerHTML = '';
@@ -1279,8 +1284,7 @@
                 });
             });
         }
-        
-        // Helper functions
+
         function calculateDateTotal(transactions) {
             let total = 0;
             transactions.forEach(transaction => {
@@ -1311,11 +1315,11 @@
         function updateBalanceSummary() {
             const totalIncome = transactions
                 .filter(t => t.type === 'income')
-                .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+                .reduce((sum, t) => sum + t.amount, 0);
                 
             const totalExpenses = transactions
                 .filter(t => t.type === 'expense')
-                .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+                .reduce((sum, t) => sum + t.amount, 0);
                 
             const balance = totalIncome - totalExpenses;
             
@@ -1334,8 +1338,16 @@
             }
         }
         
+        function calculateBalance() {
+            return transactions.reduce((balance, transaction) => {
+                return transaction.type === 'income' 
+                    ? balance + transaction.amount 
+                    : balance - transaction.amount;
+            }, 0);
+        }
+        
         function formatCurrency(amount) {
-            return `${parseFloat(amount).toFixed(2)}`;
+            return `$${amount.toFixed(2)}`;
         }
         
         function formatDate(dateString) {
@@ -1343,7 +1355,6 @@
             return new Date(dateString).toLocaleDateString(undefined, options);
         }
         
-        // Transaction edit functions
         function editTransaction(id) {
             const transaction = transactions.find(t => t.id === id);
             
@@ -1372,7 +1383,6 @@
             document.getElementById('editModal').style.display = 'none';
         }
         
-        // Delete transaction function
         async function deleteTransaction(id) {
             try {
                 const token = localStorage.getItem('token');
@@ -1404,21 +1414,11 @@
             }
         }
         
-        // Logout function
         function logout() {
-            const token = localStorage.getItem('token');
-            
-            fetch('/api/auth/logout', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-            .finally(() => {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                window.location.href = '/login.html';
-            });
+            localStorage.removeItem('token');
+            localStorage.removeItem('userRole');
+            sessionStorage.clear();
+            window.location.href = '/login.html';
         }
     </script>
 </body>
