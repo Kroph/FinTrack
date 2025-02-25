@@ -8,7 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.1.9/Recharts.min.js"></script>
-    <script src="/js/OverviewChart.js" type="module" defer></script>
+    <script src="./js/OverviewChart.js" type="module" defer></script>
     <style>
         :root {
             --primary: #4361ee;
@@ -608,7 +608,6 @@
                         <div class="form-group">
                             <label for="category">Category</label>
                             <select id="category" required>
-                                <!-- Categories will be populated by JavaScript based on selected type -->
                             </select>
                         </div>
                         <div class="form-group">
@@ -626,6 +625,7 @@
         </div>
         
         <div class="right-column">
+            
             <div id="overview-chart-container" style="height: 250px;"></div>
             
             <div class="card" style="margin-top: 1rem;">
@@ -636,7 +636,6 @@
                     </button>
                 </div>
                 <div class="card-body">
-                    <!-- Filter panel - hidden by default -->
                     <div id="filter-panel" class="filter-panel" style="display: none;">
                         <div class="filter-row">
                             <div class="filter-group">
@@ -741,21 +740,22 @@
         </div>
     </div>
 
-    <script type="module">
-        // Initialize the Overview Chart component
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Make the transactions available to the React component
             window.transactions = transactions;
             
-            // Create a custom event to notify of transaction updates
-            const transactionsUpdatedEvent = new Event('transactionsUpdated');
+            const container = document.getElementById('overview-chart-container');
+            if (container) {
+                ReactDOM.render(React.createElement(OverviewChart), container);
+            }
             
-            // Override functions that modify transactions to emit the event
             const originalRenderTransactions = renderTransactions;
             renderTransactions = function() {
                 originalRenderTransactions();
                 window.transactions = transactions;
-                window.dispatchEvent(transactionsUpdatedEvent);
+                if (container) {
+                    ReactDOM.render(React.createElement(OverviewChart), container);
+                }
             };
         });
     </script>
