@@ -770,7 +770,7 @@
 
     <script>
         // Category definitions
-        const categories = {
+        window.categories = {
             income: ['Salary', 'Gift', 'Fund'],
             expense: ['Food', 'Apartment', 'Transportation']
         };
@@ -891,6 +891,9 @@
         
         // Initialize when DOM is ready
         document.addEventListener('DOMContentLoaded', async () => {
+
+            console.log('Categories available:', window.categories);
+            
             // Check authentication state first
             const isAuthenticated = await checkAuthState();
             
@@ -1046,7 +1049,7 @@
             const categorySelect = document.getElementById('category');
             categorySelect.innerHTML = '';
             
-            categories[type].forEach(category => {
+            window.categories[type].forEach(category => {
                 const option = document.createElement('option');
                 option.value = category;
                 option.textContent = category;
@@ -1058,7 +1061,7 @@
             const categorySelect = document.getElementById('edit-category');
             categorySelect.innerHTML = '';
             
-            categories[type].forEach(category => {
+            window.categories[type].forEach(category => {
                 const option = document.createElement('option');
                 option.value = category;
                 option.textContent = category;
