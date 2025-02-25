@@ -454,12 +454,19 @@
         // Store the currently selected user for deletion
         let selectedUserId = null;
         
-        document.addEventListener('DOMContentLoaded', () => {
-            // Check if user is authorized
-            checkAuth();
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('Admin dashboard initializing...');
             
-            // Load users
-            loadUsers();
+            // Check if user is authorized
+            const isAdmin = await checkAuth();
+            
+            if (isAdmin) {
+                console.log('Admin authentication successful');
+                // Load users
+                loadUsers();
+            } else {
+                console.log('Not authorized as admin');
+            }
         });
         
         async function checkAuth() {
@@ -471,6 +478,7 @@
             }
             
             try {
+                // First check if the user is authenticated
                 const response = await fetch('/api/auth/user', {
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -478,27 +486,37 @@
                 });
                 
                 if (!response.ok) {
-                    throw new Error('Not authorized');
+                    throw new Error('Authentication failed');
                 }
                 
-                const data = await response.json();
+                const userData = await response.json();
                 
-                // Check if user is admin (implementation depends on your backend)
-                const isAdmin = await checkAdminStatus(token);
+                // Now check if user is admin by directly fetching admin data
+                // If this succeeds, they're an admin. If it fails with 403, they're not
+                const adminCheckResponse = await fetch('/api/admin/users', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
                 
-                if (!isAdmin) {
+                if (adminCheckResponse.status === 403) {
+                    // User is not an admin
                     window.location.href = '/home.html';
+                    return false;
                 }
+                
+                if (!adminCheckResponse.ok) {
+                    console.error('Admin check error:', adminCheckResponse.status);
+                    throw new Error('Failed to check admin status');
+                }
+                
+                return true;
             } catch (error) {
                 console.error('Auth check failed:', error);
                 localStorage.removeItem('token');
                 window.location.href = '/login.html';
+                return false;
             }
-        }
-        
-        async function checkAdminStatus(token) {
-            // Mock implementation - replace with actual API call
-            return true;
         }
         
         async function loadUsers() {
@@ -581,17 +599,29 @@
                 return;
             }
             
+            console.log('Searching for users with term:', searchTerm);
+            
             fetch(`/api/admin/users/search?term=${encodeURIComponent(searchTerm)}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             })
             .then(response => {
-                if (!response.ok) throw new Error('Search failed');
+                console.log('Search API Response status:', response.status);
+                
+                if (!response.ok) {
+                    return response.json().catch(() => {
+                        throw new Error(`Search failed (${response.status})`);
+                    }).then(errorData => {
+                        throw new Error(`Search failed: ${errorData.error || ''}`);
+                    });
+                }
                 return response.json();
             })
             .then(data => {
-                if (data.users.length === 0) {
+                console.log('Search results:', data);
+                
+                if (!data.users || data.users.length === 0) {
                     userList.innerHTML = `
                         <div class="empty-state">
                             <i class="fas fa-search"></i>
@@ -608,7 +638,6 @@
                     const userCard = document.createElement('div');
                     userCard.className = 'user-card';
                     
-                    // Admin role without promotion options, same for search results
                     const userRole = user.is_admin ? 
                         '<span class="user-role role-admin">Admin</span>' : 
                         '<span class="user-role role-user">User</span>';
