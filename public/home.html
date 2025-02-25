@@ -767,5 +767,52 @@
             </form>
         </div>
     </div>
+
+    <script>
+        // Chart connector script - ensures data flows between scripts
+        document.addEventListener('DOMContentLoaded', function() {
+          console.log('Chart connector script loaded');
+          
+          // Ensure window.transactions exists
+          if (!window.transactions) {
+            window.transactions = [];
+            console.log('Created empty window.transactions array');
+          }
+          
+          // Create a watcher for the transactions variable
+          setInterval(function() {
+            // Check if global transactions exist but haven't been copied to window
+            if (typeof transactions !== 'undefined' && transactions.length > 0 && 
+                (!window.transactions || window.transactions.length === 0)) {
+              console.log(`Copying ${transactions.length} transactions to window object`);
+              window.transactions = [...transactions];
+              window.dispatchEvent(new Event('transactionsUpdated'));
+            }
+          }, 1000);
+          
+          // Add direct event listeners to transaction-related functions
+          const originalUpdateBalanceSummary = window.updateBalanceSummary;
+          if (typeof originalUpdateBalanceSummary === 'function') {
+            window.updateBalanceSummary = function() {
+              originalUpdateBalanceSummary.apply(this, arguments);
+              
+              // After updating balance, make sure charts are updated too
+              if (window.transactions !== transactions) {
+                window.transactions = transactions;
+                window.dispatchEvent(new Event('transactionsUpdated'));
+              }
+            };
+            console.log('Enhanced updateBalanceSummary to update charts');
+          }
+          
+          // Explicitly trigger chart update if transactions arrive later
+          setTimeout(function() {
+            if (window.transactions && window.transactions.length > 0) {
+              console.log('Triggering delayed chart update');
+              window.dispatchEvent(new Event('transactionsUpdated'));
+            }
+          }, 3000);
+        });
+    </script>
 </body>
 </html>

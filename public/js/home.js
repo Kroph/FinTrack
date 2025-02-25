@@ -1,5 +1,4 @@
-// home.js - Main script for the home page functionality
-
+window.transactions = [];
 // Category definitions
 const categories = {
     income: ['Salary', 'Gift', 'Fund'],
@@ -95,11 +94,9 @@ async function loadTransactions() {
         const data = await response.json();
         console.log(`Loaded ${data.transactions ? data.transactions.length : 0} transactions`);
         
-        // Replace local transactions array with server data
         transactions = data.transactions || [];
-        
-        // Make transactions available globally for charts
         window.transactions = transactions;
+        console.log(`Loaded ${transactions.length} transactions and made available to charts`);
         
         // Update UI
         renderTransactions();
