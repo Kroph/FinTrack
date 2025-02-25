@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FinTrack</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.1.9/Recharts.min.js"></script>
+    <script src="/js/OverviewChart.js" type="module" defer></script>
     <style>
         :root {
             --primary: #4361ee;
@@ -531,6 +535,27 @@
                 flex-direction: column;
             }
         }
+
+        .chart-toggle-btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            border-radius: 0.25rem;
+            transition: all 0.3s ease;
+            background-color: var(--light);
+            color: var(--text-light);
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .chart-toggle-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .chart-toggle-group {
+            display: flex;
+            gap: 0.25rem;
+        }
     </style>
 </head>
 <body>
@@ -601,17 +626,7 @@
         </div>
         
         <div class="right-column">
-            <div class="card">
-                <div class="card-header">Overview</div>
-                <div class="card-body">
-                    <div class="chart-container" style="height: 200px;">
-                        <div class="chart-placeholder">
-                            <i class="fas fa-chart-line" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
-                            <p>Your financial insights will appear here</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <div id="overview-chart-container" style="height: 250px;"></div>
             
             <div class="card" style="margin-top: 1rem;">
                 <div class="card-header">
@@ -726,6 +741,25 @@
         </div>
     </div>
 
+    <script type="module">
+        // Initialize the Overview Chart component
+        document.addEventListener('DOMContentLoaded', () => {
+            // Make the transactions available to the React component
+            window.transactions = transactions;
+            
+            // Create a custom event to notify of transaction updates
+            const transactionsUpdatedEvent = new Event('transactionsUpdated');
+            
+            // Override functions that modify transactions to emit the event
+            const originalRenderTransactions = renderTransactions;
+            renderTransactions = function() {
+                originalRenderTransactions();
+                window.transactions = transactions;
+                window.dispatchEvent(transactionsUpdatedEvent);
+            };
+        });
+    </script>
+
     <script>
         // Category definitions
         const categories = {
@@ -824,6 +858,8 @@
                 }
             });
         });
+
+        window.dispatchEvent(new Event('transactionsUpdated'));
         
         function populateCategories(type = 'income') {
             const categorySelect = document.getElementById('category');
@@ -1102,9 +1138,9 @@
             
             if (balance < 0) {
                 balanceElement.textContent = "-" + balanceElement.textContent;
-                balanceElement.style.color = "#ffcccc"; // Light red for negative balance
+                balanceElement.style.color = "#c1121f";
             } else {
-                balanceElement.style.color = "white"; // Reset to default color for positive
+                balanceElement.style.color = "white";
             }
         }
         
