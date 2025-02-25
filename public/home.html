@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinTrack</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="./css/styles.css">
+    <link rel="stylesheet" href="./css/dashboard.css">
+</head>
+<body>
+    <header>
+        <div class="top">
+            <h2 class="user">Hello, <span id="username">User</span></h2>
+            <h1>FinTrack</h1>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="left-column">
+            <div class="balance-card">
+                <div class="balance-title">Current Balance</div>
+                <div class="balance-amount" id="total-balance">$0.00</div>
+                <div class="balance-details">
+                    <div class="balance-item">
+                        <div class="balance-label">Income</div>
+                        <div class="balance-value" id="total-income">$0.00</div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="balance-label">Expenses</div>
+                        <div class="balance-value" id="total-expenses">$0.00</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <span>Add Transaction</span>
+                </div>
+                <div class="card-body">
+                    <div class="type-selector">
+                        <div class="type-btn income-btn active" id="income-btn" onclick="selectTransactionType('income')">
+                            <i class="fas fa-plus-circle"></i> Income
+                        </div>
+                        <div class="type-btn expense-btn" id="expense-btn" onclick="selectTransactionType('expense')">
+                            <i class="fas fa-minus-circle"></i> Expense
+                        </div>
+                    </div>
+
+                    <form id="transaction-form">
+                        <input type="hidden" id="transaction-type" value="income">
+                        <div class="form-group">
+                            <label for="amount">Amount</label>
+                            <input type="number" id="amount" min="0.01" step="0.01" placeholder="0.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <select id="category" required>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <input type="text" id="description" placeholder="What was this for?" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="date">Date</label>
+                            <input type="date" id="date">
+                        </div>
+                        <button type="submit">Add Transaction</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="right-column">
+            <div class="card" style="margin-top: 1rem;">
+                <div class="card-header">Overview</div>
+                <div class="card-body">
+                  <div class="chart-controls">
+                    <div class="data-type-controls">
+                      <button class="btn-sm data-type-btn active" data-type="expense">
+                        <i class="fas fa-minus-circle"></i> Expense
+                      </button>
+                      <button class="btn-sm data-type-btn" data-type="income">
+                        <i class="fas fa-plus-circle"></i> Income
+                      </button>
+                    </div>
+                    
+                    <div class="time-period-controls">
+                      <select id="time-period-selector">
+                        <option value="7days">Last 7 Days</option>
+                        <option value="30days" selected>Last 30 Days</option>
+                        <option value="90days">Last 90 Days</option>
+                        <option value="year">This Year</option>
+                        <option value="custom">Custom Range</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div id="custom-date-range" style="display: none;">
+                    <div class="filter-group">
+                      <label for="chart-date-from">From</label>
+                      <input type="date" id="chart-date-from">
+                    </div>
+                    <div class="filter-group">
+                      <label for="chart-date-to">To</label>
+                      <input type="date" id="chart-date-to">
+                    </div>
+                    <button id="apply-custom-date">
+                      Apply
+                    </button>
+                  </div>
+                  
+                  <div id="chart-container">
+                    <div class="chart-placeholder">
+                      <i class="fas fa-chart-line"></i>
+                      <p>Loading your financial insights...</p>
+                    </div>
+                  </div>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: 1rem;">
+                <div class="card-header">
+                    <span>Recent Transactions</span>
+                    <button id="filter-toggle-btn" onclick="toggleFilterPanel()">
+                        <i class="fas fa-filter"></i> Filter & Sort
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="filter-panel" class="filter-panel" style="display: none;">
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label>Transaction Type</label>
+                                <div class="checkbox-group">
+                                    <div class="checkbox-item">
+                                        <input type="checkbox" id="filter-income" checked>
+                                        <label for="filter-income">Income</label>
+                                    </div>
+                                    <div class="checkbox-item">
+                                        <input type="checkbox" id="filter-expense" checked>
+                                        <label for="filter-expense">Expense</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label for="filter-date-from">Date Range</label>
+                                <input type="date" id="filter-date-from" placeholder="From">
+                            </div>
+                            <div class="filter-group">
+                                <label for="filter-date-to">To</label>
+                                <input type="date" id="filter-date-to" placeholder="To">
+                            </div>
+                        </div>
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label>Amount Range</label>
+                                <div class="range-inputs">
+                                    <input type="number" id="filter-amount-min" placeholder="Min" min="0" step="0.01">
+                                    <span>to</span>
+                                    <input type="number" id="filter-amount-max" placeholder="Max" min="0" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label for="sort-by">Sort By</label>
+                                <select id="sort-by">
+                                    <option value="date-desc">Date (Newest First)</option>
+                                    <option value="date-asc">Date (Oldest First)</option>
+                                    <option value="amount-desc">Amount (Highest First)</option>
+                                    <option value="amount-asc">Amount (Lowest First)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="filter-actions">
+                            <button class="filter-toggle" onclick="resetFilters()">Reset</button>
+                            <button onclick="applyFilters()">Apply Filters</button>
+                        </div>
+                    </div>
+
+                    <div class="transaction-list" id="transaction-list">
+                    </div>
+                </div>
+            </div>
+            
+
+        </div>
+    </div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="close-modal" onclick="closeEditModal()">&times;</div>
+            <h2 style="margin-bottom: 1.5rem;">Edit Transaction</h2>
+            <form id="edit-form">
+                <div class="type-selector">
+                    <div class="type-btn income-btn" id="edit-income-btn" onclick="selectEditType('income')">
+                        <i class="fas fa-plus-circle"></i> Income
+                    </div>
+                    <div class="type-btn expense-btn" id="edit-expense-btn" onclick="selectEditType('expense')">
+                        <i class="fas fa-minus-circle"></i> Expense
+                    </div>
+                </div>
+                <input type="hidden" id="edit-type" value="income">
+                <div class="form-group">
+                    <label for="edit-amount">Amount</label>
+                    <input type="number" id="edit-amount" min="0.01" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-category">Category</label>
+                    <select id="edit-category" required>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-description">Description</label>
+                    <input type="text" id="edit-description" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-date">Date</label>
+                    <input type="date" id="edit-date">
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" onclick="closeEditModal()" style="background-color: var(--text-light);">Cancel</button>
+                    <button type="submit">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/charts.js"></script>
+</body>
+</html>

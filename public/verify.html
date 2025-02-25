@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./css/styles.css">
+    <link rel="stylesheet" href="./css/auth.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-header">
+            <h1>FinTrack</h1>
+            <p>Email Verification</p>
+        </div>
+        
+        <div class="auth-body">
+            <div id="auth-message" class="auth-message"></div>
+            
+            <div class="verification-text">
+                We've sent a verification code to:<br>
+                <span class="verification-email pulse" id="user-email">user@example.com</span>
+                Please enter the 6-digit code below
+            </div>
+            
+            <form id="verification-form">
+                <div class="code-inputs">
+                    <input type="text" class="code-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                    <input type="text" class="code-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                    <input type="text" class="code-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                    <input type="text" class="code-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                    <input type="text" class="code-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                    <input type="text" class="code-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                </div>
+                
+                <div class="help-text">
+                    Didn't receive the code? Check your spam folder.
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="verify-btn" id="verify-button">
+                        Verify Email <span class="loader" id="verify-loader"></span>
+                    </button>
+                    <button type="button" class="resend-btn" id="resend-button">
+                        Resend Code
+                    </button>
+                </div>
+            </form>
+            
+            <div class="auth-footer">
+                <p>Return to <a href="login.html">Login</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+</body>
+</html>
