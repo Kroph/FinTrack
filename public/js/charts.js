@@ -103,50 +103,49 @@ function updateChartWithCustomRange(startDateStr, endDateStr, transactionType) {
     updateChart(startDate, endDate, transactionType);
 }
 
-// Update chart with filtered data
 function updateChart(startDate, endDate, transactionType) {
-    // Filter transactions by date range and type
     const filteredTransactions = window.transactions.filter(t => {
         const transDate = new Date(t.date);
         return transDate >= startDate && 
-            transDate <= endDate && 
-            t.type === transactionType;
+               transDate <= endDate && 
+               t.type === transactionType;
     });
     
-    // Group transactions by day of week
-    const dayData = {
-        'Sunday': 0,
-        'Monday': 0,
-        'Tuesday': 0,
-        'Wednesday': 0,
-        'Thursday': 0,
-        'Friday': 0,
-        'Saturday': 0
-    };
+    const dailyData = {};
+    
+    const currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+        const dateString = currentDate.toISOString().split('T')[0];
+        dailyData[dateString] = 0;
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
     
     filteredTransactions.forEach(transaction => {
-        const day = new Date(transaction.date).toLocaleString('en-US', { weekday: 'long' });
-        dayData[day] += parseFloat(transaction.amount);
+        const dateString = transaction.date;
+        if (dailyData.hasOwnProperty(dateString)) {
+            dailyData[dateString] += parseFloat(transaction.amount);
+        }
     });
     
-    // Update chart
-    overviewChart.data.labels = Object.keys(dayData);
-    overviewChart.data.datasets[0].data = Object.values(dayData);
+    const chartLabels = Object.keys(dailyData).map(dateStr => {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    });
     
-    // Set colors based on transaction type
+    overviewChart.data.labels = chartLabels;
+    overviewChart.data.datasets[0].data = Object.values(dailyData);
+    
     const color = transactionType === 'income' ? '#4cc9f0' : '#f72585';
     const hoverColor = transactionType === 'income' ? '#3a9dc1' : '#d41e6e';
     
-    overviewChart.data.datasets[0].backgroundColor = Array(7).fill(color);
-    overviewChart.data.datasets[0].borderColor = Array(7).fill(hoverColor);
+    overviewChart.data.datasets[0].backgroundColor = Array(chartLabels.length).fill(color);
+    overviewChart.data.datasets[0].borderColor = Array(chartLabels.length).fill(hoverColor);
     
-    // Format date range for title
     const dateRangeText = formatDateRange(startDate, endDate);
     
-    // Update chart title
     overviewChart.options.plugins.title = {
         display: true,
-        text: `${transactionType === 'income' ? 'Income' : 'Expenses'} by Day of Week (${dateRangeText})`,
+        text: `${transactionType === 'income' ? 'Income' : 'Expenses'} by Day (${dateRangeText})`,
         font: {
             size: 16
         }
@@ -155,7 +154,6 @@ function updateChart(startDate, endDate, transactionType) {
     overviewChart.update();
 }
 
-// Format date range for display
 function formatDateRange(start, end) {
     // Format the date range for display
     const options = { month: 'short', day: 'numeric' };

@@ -177,13 +177,6 @@ body {
     box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
 }
 
-.help-text {
-    text-align: center;
-    color: var(--text-light);
-    font-size: 0.9rem;
-    margin-top: 0.5rem;
-}
-
 .form-actions {
     display: flex;
     flex-direction: column;
@@ -221,4 +214,22 @@ body {
 
 .forgot-password a:hover {
     color: var(--primary);
+}
+
+.verify-btn {
+    width: 100%;
+    background: linear-gradient(to right, var(--primary), var(--primary-dark));
+    color: white;
+    border: none;
+    padding: 0.85rem;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.verify-btn:hover {
+    background: linear-gradient(to right, var(--primary-dark), var(--primary-dark));
+    transform: translateY(-1px);
 }
