@@ -232,6 +232,49 @@
     </div>
 
     <script>
+
+        function initCustomDateUI() {
+            const customDateRange = document.getElementById('custom-date-range');
+            const applyButton = document.getElementById('apply-custom-date');
+            
+            // Style fixes for the custom date range container
+            if (customDateRange) {
+                customDateRange.style.display = 'none';
+                customDateRange.style.flexDirection = 'column';
+                customDateRange.style.gap = '1rem';
+                customDateRange.style.padding = '1rem';
+                customDateRange.style.backgroundColor = 'rgba(240,240,245,0.5)';
+                customDateRange.style.borderRadius = '8px';
+                customDateRange.style.border = '1px solid var(--border)';
+                customDateRange.style.marginTop = '1rem';
+            }
+            
+            // Style fixes for the apply button
+            if (applyButton) {
+                applyButton.style.display = 'block';
+                applyButton.style.width = '100%';
+                applyButton.style.padding = '0.75rem';
+                applyButton.style.marginTop = '0.5rem';
+                applyButton.style.backgroundColor = 'var(--primary)';
+                applyButton.style.color = 'white';
+                applyButton.style.border = 'none';
+                applyButton.style.borderRadius = '4px';
+                applyButton.style.fontWeight = '500';
+                applyButton.style.cursor = 'pointer';
+            }
+            
+            // Fix the date input fields
+            const dateInputs = customDateRange.querySelectorAll('input[type="date"]');
+            dateInputs.forEach(input => {
+                input.style.width = '100%';
+                input.style.padding = '0.5rem';
+                input.style.border = '1px solid var(--border)';
+                input.style.borderRadius = '4px';
+            });
+        }
+
+    </script>
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
           const periodSelector = document.getElementById('time-period-selector');
           const customDateRange = document.getElementById('custom-date-range');

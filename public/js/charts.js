@@ -140,6 +140,7 @@ function updateChartWithCustomRange(startDateStr, endDateStr, transactionType) {
 }
 
 // Improved updateChart function with better date handling
+// Complete replacement for updateChart function in charts.js
 function updateChart(startDate, endDate, transactionType) {
     console.log('Raw transaction data:', window.transactions ? window.transactions.length : 0, 'transactions');
     
@@ -156,9 +157,12 @@ function updateChart(startDate, endDate, transactionType) {
         return;
     }
     
-    // Ensure dates are Date objects
+    // Ensure dates are Date objects and set to midnight for proper comparison
     startDate = new Date(startDate);
+    startDate.setHours(0, 0, 0, 0);
+    
     endDate = new Date(endDate);
+    endDate.setHours(0, 0, 0, 0);
     
     console.log('Filtering transactions by date range:', 
                 startDate.toISOString().split('T')[0], 
@@ -169,10 +173,23 @@ function updateChart(startDate, endDate, transactionType) {
     console.log('Transaction dates:', window.transactions.map(t => t.date).join(', '));
     
     const filteredTransactions = window.transactions.filter(t => {
-        // Parse the transaction date
-        const transDate = new Date(t.date);
+        // Normalize transaction date to YYYY-MM-DD
+        let transDateStr;
         
-        // Set hours to 0 for proper date comparison
+        if (t.date) {
+            // Extract just the date part if it's an ISO string
+            if (t.date.includes('T')) {
+                transDateStr = t.date.split('T')[0]; 
+            } else {
+                transDateStr = t.date;
+            }
+        } else {
+            console.warn('Transaction has no date:', t);
+            return false;
+        }
+        
+        // Parse the transaction date
+        const transDate = new Date(transDateStr);
         transDate.setHours(0, 0, 0, 0);
         
         // Check if date is in range and type matches
@@ -190,9 +207,12 @@ function updateChart(startDate, endDate, transactionType) {
     
     // If no transactions match the criteria
     if (filteredTransactions.length === 0) {
-        overviewChart.data.labels = [];
-        overviewChart.data.datasets[0].data = [];
-        overviewChart.update();
+        // Clear existing chart data
+        if (overviewChart) {
+            overviewChart.data.labels = [];
+            overviewChart.data.datasets[0].data = [];
+            overviewChart.update();
+        }
         
         const chartContainer = document.getElementById('chart-container');
         chartContainer.innerHTML = `
@@ -205,9 +225,11 @@ function updateChart(startDate, endDate, transactionType) {
         return;
     }
     
-    // Generate all dates in the range
+    // Generate all dates in the range for the x-axis
     const dailyData = {};
     const currentDate = new Date(startDate);
+    
+    // End date is exclusive, so we use < instead of <=
     while (currentDate < endDate) {
         // Format the date as YYYY-MM-DD
         const dateString = currentDate.toISOString().split('T')[0];
@@ -217,26 +239,37 @@ function updateChart(startDate, endDate, transactionType) {
     
     console.log('Generated date range keys:', Object.keys(dailyData).join(', '));
     
+    // Sum transaction amounts by date
     filteredTransactions.forEach(transaction => {
-        const dateString = transaction.date;
+        // Normalize the date to YYYY-MM-DD
+        let dateString;
+        
+        if (transaction.date.includes('T')) {
+            dateString = transaction.date.split('T')[0];
+        } else {
+            dateString = transaction.date;
+        }
         
         if (dailyData.hasOwnProperty(dateString)) {
             dailyData[dateString] += parseFloat(transaction.amount);
         } else {
-            console.warn('Transaction date not in generated range:', dateString);
+            console.warn('Transaction date not in generated range:', transaction.date);
+            // Add it anyway to ensure data appears
             dailyData[dateString] = parseFloat(transaction.amount);
         }
     });
     
-    const chartLabels = Object.keys(dailyData).map(dateStr => {
+    // Generate chart data in order of dates
+    const chartLabels = Object.keys(dailyData).sort().map(dateStr => {
         const date = new Date(dateStr);
         return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     });
     
-    const chartData = Object.values(dailyData);
+    const chartData = Object.keys(dailyData).sort().map(key => dailyData[key]);
     
     console.log('Chart data prepared:', chartLabels.length, 'data points');
     
+    // Update chart with new data
     overviewChart.data.labels = chartLabels;
     overviewChart.data.datasets[0].data = chartData;
     
@@ -257,17 +290,40 @@ function updateChart(startDate, endDate, transactionType) {
         }
     };
     
-    // Clear any previous error messages
+    // Make sure canvas is visible before updating
     const chartContainer = document.getElementById('chart-container');
-    chartContainer.innerHTML = '<canvas id="overview-chart"></canvas>';
-    
-    // Get the new canvas context
-    const ctx = document.getElementById('overview-chart').getContext('2d');
-    overviewChart.ctx = ctx;
-    overviewChart.canvas = document.getElementById('overview-chart');
+    if (chartContainer.innerHTML.includes('empty-state')) {
+        chartContainer.innerHTML = '<canvas id="overview-chart"></canvas>';
+        
+        // Get the new canvas context
+        const ctx = document.getElementById('overview-chart').getContext('2d');
+        overviewChart.ctx = ctx;
+        overviewChart.canvas = document.getElementById('overview-chart');
+    }
     
     // Update the chart
     overviewChart.update();
+}
+
+// Updated formatDateRange function to handle different date formats
+function formatDateRange(startDate, endDate) {
+    // Format the date range for display
+    const options = { month: 'short', day: 'numeric' };
+    
+    // Adjust end date back by one day since we added a day for inclusive filtering
+    const adjustedEnd = new Date(endDate);
+    adjustedEnd.setDate(adjustedEnd.getDate() - 1);
+    
+    // Check if dates are the same year
+    const sameYear = startDate.getFullYear() === adjustedEnd.getFullYear();
+    
+    if (sameYear) {
+        return `${startDate.toLocaleDateString('en-US', options)} - ${adjustedEnd.toLocaleDateString('en-US', options)}`;
+    } else {
+        // Include year if dates span different years
+        const optionsWithYear = { month: 'short', day: 'numeric', year: 'numeric' };
+        return `${startDate.toLocaleDateString('en-US', optionsWithYear)} - ${adjustedEnd.toLocaleDateString('en-US', optionsWithYear)}`;
+    }
 }
 
 function initializeCharts() {
@@ -414,9 +470,7 @@ window.addEventListener('transactionsUpdated', function() {
     setTimeout(refreshChart, 200);
 });
 
-// Fix for the charts.js initial load
 document.addEventListener('DOMContentLoaded', function() {
-    // If transactions are already loaded, initialize the chart
     if (window.transactions && window.transactions.length > 0) {
         console.log('Transactions already available, initializing chart');
         initializeCharts();
@@ -424,4 +478,5 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Waiting for transactions to be loaded');
         // The transactionsUpdated event will handle this
     }
+    initCustomDateUI();
 });

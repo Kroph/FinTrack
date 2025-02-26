@@ -192,27 +192,17 @@ async function loadTransactions() {
     }
 }
 
-// Also fix the handleTransactionSubmit function to update window.transactions
-// Add these lines after updating the local transactions array:
-
-// Updated handleTransactionSubmit function (partial)
 transactions.unshift(data.transaction);
 
-// Important: Keep window.transactions and local transactions in sync
-window.transactions = transactions;
-console.log('Updated window.transactions with new transaction');
+if (data && data.transaction) {
+    transactions.unshift(data.transaction);
+    
+    window.transactions = transactions;
+    console.log('Updated window.transactions with new transaction');
+} else {
+    console.error('Error: Transaction data is undefined or invalid');
+}
 
-// Same for handleEditFormSubmit:
-// After updating local transactions array:
-window.transactions = transactions;
-console.log('Updated window.transactions after editing transaction');
-
-// And for deleteTransaction:
-// After filtering transactions:
-window.transactions = transactions;
-console.log('Updated window.transactions after deleting transaction');
-
-// Handle new transaction form submission
 async function handleTransactionSubmit(e) {
     e.preventDefault();
     
@@ -467,32 +457,53 @@ function renderTransactions() {
     const list = document.getElementById('transaction-list');
     list.innerHTML = '';
     
-    // Apply current filters
-    const filteredTransactions = transactions.filter(transaction => {
-        // Filter by type
-        if (!filters.types.includes(transaction.type)) {
+    const filteredTransactions = window.transactions.filter(t => {
+        let transDateStr;
+        
+        if (t.date) {
+            // Transaction date could be in several formats
+            if (t.date.includes('T')) {
+                transDateStr = t.date.split('T')[0];
+            } else {
+                // It's already in YYYY-MM-DD format
+                transDateStr = t.date;
+            }
+        } else {
+            console.warn('Transaction has no date:', t);
             return false;
         }
         
-        // Filter by date range
-        if (filters.dateFrom && new Date(transaction.date) < filters.dateFrom) {
-            return false;
+        // Parse the transaction date
+        const transDate = new Date(transDateStr);
+        transDate.setHours(0, 0, 0, 0);
+        
+        // Check if date is in range and type matches
+        const inDateRange = transDate >= startDate && transDate < endDate;
+        const typeMatches = t.type === transactionType;
+        
+        if (typeMatches && !inDateRange) {
+            console.log('Transaction date out of range:', t.date, transDate.toISOString());
         }
         
-        if (filters.dateTo && new Date(transaction.date) > filters.dateTo) {
-            return false;
+        return inDateRange && typeMatches;
+    });
+
+    filteredTransactions.forEach(transaction => {
+        let dateString;
+        
+        if (transaction.date.includes('T')) {
+            dateString = transaction.date.split('T')[0];
+        } else {
+            dateString = transaction.date;
         }
         
-        // Filter by amount range
-        if (filters.amountMin !== null && transaction.amount < filters.amountMin) {
-            return false;
+        if (dailyData.hasOwnProperty(dateString)) {
+            dailyData[dateString] += parseFloat(transaction.amount);
+        } else {
+            console.warn('Transaction date not in generated range:', transaction.date);
+            // Add it anyway to ensure data appears
+            dailyData[dateString] = parseFloat(transaction.amount);
         }
-        
-        if (filters.amountMax !== null && transaction.amount > filters.amountMax) {
-            return false;
-        }
-        
-        return true;
     });
     
     // Apply sorting
