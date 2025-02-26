@@ -99,26 +99,26 @@
                     </div>
                 </div>
                   
-                <div id="custom-date-range" style="display: none;">
+                <div id="custom-date-range">
                     <div class="filter-group">
-                      <label for="chart-date-from">From</label>
+                      <label for="chart-date-from">Start Date</label>
                       <input type="date" id="chart-date-from">
                     </div>
                     <div class="filter-group">
-                      <label for="chart-date-to">To</label>
+                      <label for="chart-date-to">End Date</label>
                       <input type="date" id="chart-date-to">
                     </div>
-                    <button id="apply-custom-date">
-                      Apply
+                    <button id="apply-custom-date" type="button">
+                      <i class="fas fa-check"></i> Apply Date Range
                     </button>
-                  </div>
+                </div>
                   
-                  <div id="chart-container" style="height: 250px; position: relative;">
+                <div id="chart-container" style="height: 250px; position: relative;">
                     <div class="chart-placeholder">
                       <i class="fas fa-chart-line"></i>
                       <p>Loading your financial insights...</p>
                     </div>
-                  </div>
+                </div>
                 </div>
             </div>
             
@@ -230,6 +230,54 @@
             </form>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          const periodSelector = document.getElementById('time-period-selector');
+          const customDateRange = document.getElementById('custom-date-range');
+          
+          periodSelector.addEventListener('change', function() {
+            const selectedPeriod = this.value;
+            
+            if (selectedPeriod === 'custom') {
+              customDateRange.style.display = 'flex';
+            } else {
+              customDateRange.style.display = 'none';
+              updateChartWithTimePeriod(selectedPeriod);
+            }
+          });
+          
+          // Initialize the date inputs with reasonable defaults if empty
+          const today = new Date();
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(today.getDate() - 30);
+          
+          const startDateInput = document.getElementById('chart-date-from');
+          const endDateInput = document.getElementById('chart-date-to');
+          
+          if (!startDateInput.value) {
+            startDateInput.valueAsDate = thirtyDaysAgo;
+          }
+          
+          if (!endDateInput.value) {
+            endDateInput.valueAsDate = today;
+          }
+          
+          // Custom date range apply button
+          document.getElementById('apply-custom-date').addEventListener('click', function() {
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+            
+            if (!startDate || !endDate) {
+              alert('Please select both start and end dates');
+              return;
+            }
+            
+            console.log('Applying custom date range:', startDate, 'to', endDate);
+            updateChartWithCustomRange(startDate, endDate);
+          });
+        });
+    </script>
 
     <script src="js/auth.js"></script>
     <script src="js/dashboard.js"></script>
