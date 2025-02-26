@@ -1,8 +1,3 @@
-/**
- * Charts and data visualization for the dashboard
- */
-
-// Global chart reference
 let overviewChart = null;
 
 // Initialize chart when transactions are loaded
@@ -11,54 +6,88 @@ window.addEventListener('transactionsUpdated', initializeCharts);
 // Initialize chart
 function initializeCharts() {
     const chartContainer = document.getElementById('chart-container');
+    
+    // Clear any previous content
     chartContainer.innerHTML = '<canvas id="overview-chart"></canvas>';
     
-    const ctx = document.getElementById('overview-chart').getContext('2d');
-    overviewChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: [],
-            datasets: [{
-                label: 'Amount',
-                data: [],
-                backgroundColor: [],
-                borderColor: [],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return value.toFixed(2);
+    // Check if transactions are available
+    if (!window.transactions || window.transactions.length === 0) {
+        chartContainer.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-chart-bar"></i>
+                <h3>No transaction data available</h3>
+                <p>Add some transactions to see your financial insights</p>
+            </div>
+        `;
+        return;
+    }
+    
+    try {
+        const ctx = document.getElementById('overview-chart').getContext('2d');
+        
+        // Safety check for existing chart
+        if (window.overviewChart) {
+            window.overviewChart.destroy();
+        }
+        
+        overviewChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Amount',
+                    data: [],
+                    backgroundColor: [],
+                    borderColor: [],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toFixed(2);
+                            }
                         }
                     }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
                 },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.raw.toFixed(2);
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.raw.toFixed(2);
+                            }
                         }
                     }
                 }
             }
-        }
-    });
-    
-    // Default to 30 days view
-    updateChartWithTimePeriod('30days');
+        });
+        
+        // Make the chart globally available
+        window.overviewChart = overviewChart;
+        
+        // Default to 30 days view
+        updateChartWithTimePeriod('30days');
+    } catch (error) {
+        console.error('Error initializing chart:', error);
+        chartContainer.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Error initializing chart</h3>
+                <p>${error.message}</p>
+            </div>
+        `;
+    }
 }
 
-// Updated updateChartWithTimePeriod function for charts.js
+// Update chart based on time period
 function updateChartWithTimePeriod(period, transactionType) {
     if (!window.transactions || !overviewChart) {
         console.log('No transactions or chart available');
@@ -68,7 +97,7 @@ function updateChartWithTimePeriod(period, transactionType) {
     console.log('Updating chart with period:', period);
     
     // Get selected transaction type
-    transactionType = transactionType || document.querySelector('.data-type-btn.active').dataset.type;
+    transactionType = transactionType || document.querySelector('.data-type-btn.active')?.dataset.type || 'expense';
     console.log('Using transaction type:', transactionType);
     
     // Calculate date ranges
@@ -100,11 +129,32 @@ function updateChartWithTimePeriod(period, transactionType) {
     console.log('Date range:', startDate.toISOString(), 'to', today.toISOString());
     
     // Store the selected period in a data attribute for reference
-    document.getElementById('time-period-selector').setAttribute('data-last-period', period);
+    const periodSelector = document.getElementById('time-period-selector');
+    if (periodSelector) {
+        periodSelector.setAttribute('data-last-period', period);
+    }
     
-    updateChart(startDate, today, transactionType);
+    // Call the main update chart function with explicit dates
+    try {
+        updateChart(startDate, today, transactionType);
+    } catch (error) {
+        console.error('Error in updateChartWithTimePeriod:', error);
+        
+        // Show error in chart container
+        const chartContainer = document.getElementById('chart-container');
+        if (chartContainer) {
+            chartContainer.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Error updating chart</h3>
+                    <p>${error.message}</p>
+                </div>
+            `;
+        }
+    }
 }
 
+// Update chart with custom date range
 function updateChartWithCustomRange(startDateStr, endDateStr, transactionType) {
     if (!window.transactions || !overviewChart) {
         console.log('No transactions or chart available');
@@ -114,7 +164,7 @@ function updateChartWithCustomRange(startDateStr, endDateStr, transactionType) {
     console.log('Updating chart with custom range:', startDateStr, 'to', endDateStr);
     
     // Get selected transaction type
-    transactionType = transactionType || document.querySelector('.data-type-btn.active').dataset.type;
+    transactionType = transactionType || document.querySelector('.data-type-btn.active')?.dataset.type || 'expense';
     
     // Parse dates
     const startDate = new Date(startDateStr);
@@ -139,9 +189,23 @@ function updateChartWithCustomRange(startDateStr, endDateStr, transactionType) {
     updateChart(startDate, endDate, transactionType);
 }
 
-// Improved updateChart function with better date handling
-// Complete replacement for updateChart function in charts.js
+// The main chart update function
 function updateChart(startDate, endDate, transactionType) {
+    // Check if parameters are undefined
+    if (startDate === undefined || endDate === undefined) {
+        console.error('Error: startDate or endDate is undefined');
+        
+        // Default to last 30 days if dates are undefined
+        endDate = new Date();
+        startDate = new Date();
+        startDate.setDate(endDate.getDate() - 30);
+        
+        console.log('Using default date range:', 
+                    startDate.toISOString().split('T')[0], 
+                    'to', 
+                    endDate.toISOString().split('T')[0]);
+    }
+    
     console.log('Raw transaction data:', window.transactions ? window.transactions.length : 0, 'transactions');
     
     if (!window.transactions || window.transactions.length === 0 || !overviewChart) {
@@ -305,7 +369,7 @@ function updateChart(startDate, endDate, transactionType) {
     overviewChart.update();
 }
 
-// Updated formatDateRange function to handle different date formats
+// Format date range for display
 function formatDateRange(startDate, endDate) {
     // Format the date range for display
     const options = { month: 'short', day: 'numeric' };
@@ -326,132 +390,17 @@ function formatDateRange(startDate, endDate) {
     }
 }
 
-function initializeCharts() {
-    const chartContainer = document.getElementById('chart-container');
-    
-    // Clear any previous content
-    chartContainer.innerHTML = '<canvas id="overview-chart"></canvas>';
-    
-    // Check if transactions are available
-    if (!window.transactions || window.transactions.length === 0) {
-        chartContainer.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-chart-bar"></i>
-                <h3>No transaction data available</h3>
-                <p>Add some transactions to see your financial insights</p>
-            </div>
-        `;
-        return;
-    }
-    
-    const ctx = document.getElementById('overview-chart').getContext('2d');
-    overviewChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: [],
-            datasets: [{
-                label: 'Amount',
-                data: [],
-                backgroundColor: [],
-                borderColor: [],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return value.toFixed(2);
-                        }
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.raw.toFixed(2);
-                        }
-                    }
-                }
-            }
-        }
-    });
-    
-    // Default to 30 days view
-    updateChartWithTimePeriod('30days');
-}
-
-// Ensure window.transactions is properly shared between dashboard.js and charts.js
-window.addEventListener('transactionsUpdated', function() {
-    console.log('Transaction update event received in charts.js');
-    console.log('Transactions available:', window.transactions ? window.transactions.length : 0);
-    initializeCharts();
-});
-
-// Improved formatDateRange function
-function formatDateRange(startDate, endDate) {
-    // Format the date range for display
-    const options = { month: 'short', day: 'numeric' };
-    
-    // Adjust end date back by one day since we added a day for inclusive filtering
-    const adjustedEnd = new Date(endDate);
-    adjustedEnd.setDate(adjustedEnd.getDate() - 1);
-    
-    // Check if dates are the same year
-    const sameYear = startDate.getFullYear() === adjustedEnd.getFullYear();
-    
-    if (sameYear) {
-        return `${startDate.toLocaleDateString('en-US', options)} - ${adjustedEnd.toLocaleDateString('en-US', options)}`;
-    } else {
-        // Include year if dates span different years
-        const optionsWithYear = { month: 'short', day: 'numeric', year: 'numeric' };
-        return `${startDate.toLocaleDateString('en-US', optionsWithYear)} - ${adjustedEnd.toLocaleDateString('en-US', optionsWithYear)}`;
-    }
-}
-
-// Add this to initializeChartControls in dashboard.js
-function initializeChartControls() {
-    // ... existing code ...
-    
-    // Set default values for the date selectors on page load
-    const today = new Date();
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(today.getDate() - 30);
-    
-    const chartDateTo = document.getElementById('chart-date-to');
-    const chartDateFrom = document.getElementById('chart-date-from');
-    
-    if (chartDateTo && chartDateFrom) {
-        // Format dates as YYYY-MM-DD for the input elements
-        chartDateTo.valueAsDate = today;
-        chartDateFrom.valueAsDate = thirtyDaysAgo;
-        
-        console.log('Date inputs initialized with values:', 
-                    chartDateFrom.value, 'to', chartDateTo.value);
-    }
-    
-    // ... existing code ...
-}
-
-// Function to directly update the chart when data changes (add to charts.js)
+// Function to directly update the chart when data changes
 function refreshChart() {
     // Get current filter settings
     const periodSelector = document.getElementById('time-period-selector');
-    const selectedPeriod = periodSelector.value;
+    const selectedPeriod = periodSelector?.value || '30days';
     
     console.log('Refreshing chart with period:', selectedPeriod);
     
     if (selectedPeriod === 'custom') {
-        const startDate = document.getElementById('chart-date-from').value;
-        const endDate = document.getElementById('chart-date-to').value;
+        const startDate = document.getElementById('chart-date-from')?.value;
+        const endDate = document.getElementById('chart-date-to')?.value;
         
         if (startDate && endDate) {
             updateChartWithCustomRange(startDate, endDate);
@@ -470,7 +419,9 @@ window.addEventListener('transactionsUpdated', function() {
     setTimeout(refreshChart, 200);
 });
 
+// Initialize on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', function() {
+    // If transactions are already loaded, initialize the chart
     if (window.transactions && window.transactions.length > 0) {
         console.log('Transactions already available, initializing chart');
         initializeCharts();
@@ -478,5 +429,9 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Waiting for transactions to be loaded');
         // The transactionsUpdated event will handle this
     }
-    initCustomDateUI();
+    
+    // Initialize custom date UI if function exists
+    if (typeof initCustomDateUI === 'function') {
+        initCustomDateUI();
+    }
 });

@@ -77,7 +77,7 @@ window.editTransaction = editTransaction;
 window.closeEditModal = closeEditModal;
 window.deleteTransaction = deleteTransaction;
 window.loadTransactions = loadTransactions;
-window.logout = logout;;
+window.logout = logout;
 
 // Categories for transactions
 const categories = {
@@ -192,17 +192,6 @@ async function loadTransactions() {
     }
 }
 
-transactions.unshift(data.transaction);
-
-if (data && data.transaction) {
-    transactions.unshift(data.transaction);
-    
-    window.transactions = transactions;
-    console.log('Updated window.transactions with new transaction');
-} else {
-    console.error('Error: Transaction data is undefined or invalid');
-}
-
 async function handleTransactionSubmit(e) {
     e.preventDefault();
     
@@ -253,10 +242,15 @@ async function handleTransactionSubmit(e) {
         }
         
         // Add to local transactions array for immediate display
-        transactions.unshift(data.transaction);
-        
-        // Update global transactions for charts
-        window.transactions = transactions;
+        if (data && data.transaction) {
+            transactions.unshift(data.transaction);
+            
+            // Update global transactions for charts
+            window.transactions = transactions;
+            console.log('Updated window.transactions with new transaction');
+        } else {
+            console.error('Error: Transaction data is undefined or invalid');
+        }
         
         // Clear form
         e.target.reset();
@@ -457,53 +451,48 @@ function renderTransactions() {
     const list = document.getElementById('transaction-list');
     list.innerHTML = '';
     
-    const filteredTransactions = window.transactions.filter(t => {
-        let transDateStr;
-        
-        if (t.date) {
-            // Transaction date could be in several formats
-            if (t.date.includes('T')) {
-                transDateStr = t.date.split('T')[0];
-            } else {
-                // It's already in YYYY-MM-DD format
-                transDateStr = t.date;
-            }
-        } else {
-            console.warn('Transaction has no date:', t);
+    // Apply current filters
+    const filteredTransactions = window.transactions.filter(transaction => {
+        // Filter by type
+        if (!filters.types.includes(transaction.type)) {
             return false;
         }
         
-        // Parse the transaction date
-        const transDate = new Date(transDateStr);
-        transDate.setHours(0, 0, 0, 0);
-        
-        // Check if date is in range and type matches
-        const inDateRange = transDate >= startDate && transDate < endDate;
-        const typeMatches = t.type === transactionType;
-        
-        if (typeMatches && !inDateRange) {
-            console.log('Transaction date out of range:', t.date, transDate.toISOString());
-        }
-        
-        return inDateRange && typeMatches;
-    });
-
-    filteredTransactions.forEach(transaction => {
-        let dateString;
-        
-        if (transaction.date.includes('T')) {
-            dateString = transaction.date.split('T')[0];
+        // Normalize transaction date
+        let transDate;
+        if (transaction.date) {
+            if (transaction.date.includes('T')) {
+                transDate = new Date(transaction.date.split('T')[0]);
+            } else {
+                transDate = new Date(transaction.date);
+            }
         } else {
-            dateString = transaction.date;
+            return false;
         }
         
-        if (dailyData.hasOwnProperty(dateString)) {
-            dailyData[dateString] += parseFloat(transaction.amount);
-        } else {
-            console.warn('Transaction date not in generated range:', transaction.date);
-            // Add it anyway to ensure data appears
-            dailyData[dateString] = parseFloat(transaction.amount);
+        // Filter by date range
+        if (filters.dateFrom && transDate < filters.dateFrom) {
+            return false;
         }
+        
+        if (filters.dateTo) {
+            const toDate = new Date(filters.dateTo);
+            toDate.setDate(toDate.getDate() + 1); // Include the end date
+            if (transDate >= toDate) {
+                return false;
+            }
+        }
+        
+        // Filter by amount range
+        if (filters.amountMin !== null && transaction.amount < filters.amountMin) {
+            return false;
+        }
+        
+        if (filters.amountMax !== null && transaction.amount > filters.amountMax) {
+            return false;
+        }
+        
+        return true;
     });
     
     // Apply sorting
@@ -534,7 +523,12 @@ function renderTransactions() {
     // Group transactions by date
     const groupedByDate = {};
     sortedTransactions.forEach(transaction => {
-        const date = transaction.date;
+        let date = transaction.date;
+        // Normalize date
+        if (date.includes('T')) {
+            date = date.split('T')[0];
+        }
+        
         if (!groupedByDate[date]) {
             groupedByDate[date] = [];
         }
@@ -673,7 +667,13 @@ function editTransaction(id) {
         // Populate form fields
         document.getElementById('edit-amount').value = transaction.amount;
         document.getElementById('edit-description').value = transaction.description;
-        document.getElementById('edit-date').value = transaction.date;
+        
+        // Normalize date format for the input
+        let dateValue = transaction.date;
+        if (dateValue.includes('T')) {
+            dateValue = dateValue.split('T')[0];
+        }
+        document.getElementById('edit-date').value = dateValue;
         
         // Set transaction ID on form
         document.getElementById('edit-form').dataset.id = id;
