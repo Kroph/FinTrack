@@ -104,6 +104,26 @@ function updateChartWithCustomRange(startDateStr, endDateStr, transactionType) {
 }
 
 function updateChart(startDate, endDate, transactionType) {
+    if (!window.transactions || window.transactions.length === 0 || !overviewChart) {
+        const chartContainer = document.getElementById('chart-container');
+        chartContainer.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-chart-bar"></i>
+                <h3>No transaction data available</h3>
+                <p>Add some transactions to see your financial insights</p>
+            </div>
+        `;
+        return;
+    }
+    
+    console.log('Updating chart with transactions:', window.transactions.length);
+    console.log('Date range:', startDate, 'to', endDate);
+    console.log('Transaction type:', transactionType);
+    
+    // Ensure dates are Date objects
+    startDate = new Date(startDate);
+    endDate = new Date(endDate);
+    
     const filteredTransactions = window.transactions.filter(t => {
         const transDate = new Date(t.date);
         return transDate >= startDate && 
@@ -111,8 +131,28 @@ function updateChart(startDate, endDate, transactionType) {
                t.type === transactionType;
     });
     
+    console.log('Filtered transactions:', filteredTransactions.length);
+    
+    // If no transactions match the criteria
+    if (filteredTransactions.length === 0) {
+        overviewChart.data.labels = [];
+        overviewChart.data.datasets[0].data = [];
+        overviewChart.update();
+        
+        const chartContainer = document.getElementById('chart-container');
+        chartContainer.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-filter"></i>
+                <h3>No transactions match your criteria</h3>
+                <p>Try adjusting your date range or transaction type</p>
+            </div>
+        `;
+        return;
+    }
+    
     const dailyData = {};
     
+    // Generate all dates in the range
     const currentDate = new Date(startDate);
     while (currentDate <= endDate) {
         const dateString = currentDate.toISOString().split('T')[0];
@@ -120,10 +160,16 @@ function updateChart(startDate, endDate, transactionType) {
         currentDate.setDate(currentDate.getDate() + 1);
     }
     
+    // Sum transaction amounts by date
     filteredTransactions.forEach(transaction => {
         const dateString = transaction.date;
         if (dailyData.hasOwnProperty(dateString)) {
             dailyData[dateString] += parseFloat(transaction.amount);
+        } else {
+            // Handle the case where a transaction date isn't in our generated range
+            // (shouldn't happen with proper filtering, but as a safeguard)
+            console.warn('Transaction date not in range:', dateString);
+            dailyData[dateString] = parseFloat(transaction.amount);
         }
     });
     
@@ -132,8 +178,10 @@ function updateChart(startDate, endDate, transactionType) {
         return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     });
     
+    const chartData = Object.values(dailyData);
+    
     overviewChart.data.labels = chartLabels;
-    overviewChart.data.datasets[0].data = Object.values(dailyData);
+    overviewChart.data.datasets[0].data = chartData;
     
     const color = transactionType === 'income' ? '#4cc9f0' : '#f72585';
     const hoverColor = transactionType === 'income' ? '#3a9dc1' : '#d41e6e';
@@ -151,8 +199,80 @@ function updateChart(startDate, endDate, transactionType) {
         }
     };
     
+    // Make sure canvas is visible before updating
+    document.getElementById('overview-chart').style.display = 'block';
     overviewChart.update();
 }
+
+function initializeCharts() {
+    const chartContainer = document.getElementById('chart-container');
+    
+    // Clear any previous content
+    chartContainer.innerHTML = '<canvas id="overview-chart"></canvas>';
+    
+    // Check if transactions are available
+    if (!window.transactions || window.transactions.length === 0) {
+        chartContainer.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-chart-bar"></i>
+                <h3>No transaction data available</h3>
+                <p>Add some transactions to see your financial insights</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const ctx = document.getElementById('overview-chart').getContext('2d');
+    overviewChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Amount',
+                data: [],
+                backgroundColor: [],
+                borderColor: [],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toFixed(2);
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.raw.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Default to 30 days view
+    updateChartWithTimePeriod('30days');
+}
+
+// Ensure window.transactions is properly shared between dashboard.js and charts.js
+window.addEventListener('transactionsUpdated', function() {
+    console.log('Transaction update event received in charts.js');
+    console.log('Transactions available:', window.transactions ? window.transactions.length : 0);
+    initializeCharts();
+});
 
 function formatDateRange(start, end) {
     // Format the date range for display

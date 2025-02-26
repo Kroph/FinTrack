@@ -116,11 +116,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     initializeChartControls();
 });
 
-// Load transactions from server
 async function loadTransactions() {
     const transactionList = document.getElementById('transaction-list');
     
-    // Show loading indicator
     transactionList.innerHTML = `
         <div class="empty-state">
             <i class="fas fa-spinner fa-spin"></i>
@@ -154,16 +152,24 @@ async function loadTransactions() {
         const data = await response.json();
         console.log(`Loaded ${data.transactions ? data.transactions.length : 0} transactions`);
         
+        // Ensure transactions is an array, never null
         transactions = data.transactions || [];
+        
+        // Important: Make sure window.transactions is explicitly set
         window.transactions = transactions;
-        console.log(`Loaded ${transactions.length} transactions and made available to charts`);
+        
+        console.log(`Made ${transactions.length} transactions available to charts via window.transactions`);
         
         // Update UI
         renderTransactions();
         updateBalanceSummary();
         
-        // Notify chart of transaction updates
-        window.dispatchEvent(new Event('transactionsUpdated'));
+        // Notify charts of transaction updates
+        // Use a small timeout to ensure the DOM is ready
+        setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('transactionsUpdated'));
+            console.log('Dispatched transactionsUpdated event');
+        }, 100);
         
     } catch (error) {
         console.error('Error loading transactions:', error);
@@ -180,9 +186,31 @@ async function loadTransactions() {
         
         // Make empty transactions array available for charts
         window.transactions = [];
-        window.dispatchEvent(new Event('transactionsUpdated'));
+        setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('transactionsUpdated'));
+        }, 100);
     }
 }
+
+// Also fix the handleTransactionSubmit function to update window.transactions
+// Add these lines after updating the local transactions array:
+
+// Updated handleTransactionSubmit function (partial)
+transactions.unshift(data.transaction);
+
+// Important: Keep window.transactions and local transactions in sync
+window.transactions = transactions;
+console.log('Updated window.transactions with new transaction');
+
+// Same for handleEditFormSubmit:
+// After updating local transactions array:
+window.transactions = transactions;
+console.log('Updated window.transactions after editing transaction');
+
+// And for deleteTransaction:
+// After filtering transactions:
+window.transactions = transactions;
+console.log('Updated window.transactions after deleting transaction');
 
 // Handle new transaction form submission
 async function handleTransactionSubmit(e) {
